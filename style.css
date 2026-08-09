@@ -79,3 +79,7 @@ button:disabled {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+#screen-mode button.selected {
+  outline: 3px solid var(--maroon-dark);
+}
