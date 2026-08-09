@@ -15,8 +15,6 @@ const MASH_DURATION_MS = 3000;
 const LOADING_DELAY_MS = 900;
 const SAVE_APPEAR_DELAY_RANGE_MS = [500, 1500];
 
-const REACTION_SIGNAL_DELAY_RANGE_MS = [500, 1800];
-
 // 시뮬레이션 서버 시간: 대기 화면에 들어서는 순간이 10:29:50, 수강신청
 // 정각은 10:30:00. 매 라운드(재도전 포함) 대기 화면에 들어갈 때마다
 // 10:29:50부터 새로 시작한다 — 페이지 로드 시점부터 계속 흐르게 하면
@@ -208,31 +206,20 @@ function startEntryPhase(enterBtn, round) {
         }
       });
     } else {
-      // 반응속도 모드는 정각이 된 뒤에도 예측 방지를 위해 짧은 랜덤 대기
-      // 후 신호를 준다. 신호 전 클릭은 점수에 반영되지 않고 "아직이에요"
-      // 힌트만 보여준다.
-      hintEl.textContent = "신호가 뜰 때까지 기다리세요...";
-      const signalDelay = randomBetween(...REACTION_SIGNAL_DELAY_RANGE_MS);
-      let signalGiven = false;
+      // 반응속도 모드는 숨겨진 랜덤 신호가 아니라, 화면에 보이는 카운트다운이
+      // 정확히 정각(10:30:00)을 찍는 그 순간 자체가 신호다 — 실제 수강신청처럼
+      // 시계를 보다가 정각에 딱 맞춰 누르는 게 목표. round.whenOpen()이 불리는
+      // 시점을 그대로 goAt으로 쓴다.
+      hintEl.textContent = "지금 클릭하세요! (정각에 딱 맞출수록 고득점)";
+      const goAt = performance.now();
 
-      const lateEarlyUnbind = bindTrigger(enterBtn, () => {
-        if (!signalGiven) hintEl.textContent = "아직이에요! 신호를 기다려주세요.";
+      const unbind = bindTrigger(enterBtn, () => {
+        unbind();
+        const reactionMs = performance.now() - goAt;
+        state.entryScore = normalizeReactionMs(reactionMs);
+        state.entryRaw = { type: "ms", value: reactionMs };
+        startQueuePhase();
       });
-
-      setTimeout(() => {
-        lateEarlyUnbind();
-        signalGiven = true;
-        hintEl.textContent = "지금 클릭하세요!";
-        const goAt = performance.now();
-
-        const unbind = bindTrigger(enterBtn, () => {
-          unbind();
-          const reactionMs = performance.now() - goAt;
-          state.entryScore = normalizeReactionMs(reactionMs);
-          state.entryRaw = { type: "ms", value: reactionMs };
-          startQueuePhase();
-        });
-      }, signalDelay);
     }
   });
 }
