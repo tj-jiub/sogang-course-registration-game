@@ -1,6 +1,7 @@
 import { normalizeCps, normalizeReactionMs, combineScores, gradeForScore } from "./scoring.js";
 import { buildQueueSteps } from "./queueSim.js";
 import { loadBestScore, saveBestScore } from "./storage.js";
+import { drawResultCard } from "./resultCard.js";
 
 const STANDBY_COUNTDOWN_SEC = 7;
 const MASH_DURATION_MS = 3000;
@@ -159,4 +160,31 @@ function showResult() {
     previousBest !== null && newBest > previousBest
       ? `개인 최고 기록 갱신! (${Math.round(newBest)}점)`
       : `개인 최고 기록: ${Math.round(newBest)}점`;
+
+  const canvas = document.getElementById("result-canvas");
+  drawResultCard(canvas, { grade, overallScore });
+
+  document.getElementById("result-download").onclick = () => {
+    const link = document.createElement("a");
+    link.download = "sogang-course-registration-result.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
+
+  const shareBtn = document.getElementById("result-share");
+  if (navigator.share) {
+    shareBtn.style.display = "inline-block";
+    shareBtn.onclick = async () => {
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], "result.png", { type: "image/png" });
+        await navigator.share({
+          files: [file],
+          title: "서강대 수강신청 클릭 연습 결과",
+          text: `나는 [${grade.name}]! 너도 도전해봐.`,
+        });
+      });
+    };
+  } else {
+    shareBtn.style.display = "none";
+  }
 }
