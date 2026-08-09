@@ -28,6 +28,39 @@ function randomBetween(min, max) {
   return min + Math.random() * (max - min);
 }
 
+function isTriggerKey(event) {
+  return (event.code === "Space" || event.code === "Enter") && !event.repeat;
+}
+
+// 클릭과 Space/Enter 키를 하나의 트리거로 묶어준다.
+// preventDefault()를 호출해 버튼에 포커스가 가 있을 때 Space/Enter가
+// 네이티브 click 이벤트를 한 번 더 만들어 중복 카운트되는 것을 막는다.
+function bindTrigger(button, onTrigger) {
+  const onClick = () => onTrigger();
+  const onKeydown = (event) => {
+    if (!isTriggerKey(event)) return;
+    event.preventDefault();
+    onTrigger();
+  };
+  button.addEventListener("click", onClick);
+  document.addEventListener("keydown", onKeydown);
+  return () => {
+    button.removeEventListener("click", onClick);
+    document.removeEventListener("keydown", onKeydown);
+  };
+}
+
+function startServerClock() {
+  const clockEl = document.getElementById("server-clock");
+  const tick = () => {
+    clockEl.textContent = new Date().toLocaleTimeString("ko-KR", { hour12: false });
+  };
+  tick();
+  setInterval(tick, 1000);
+}
+
+startServerClock();
+
 document.getElementById("login-form").addEventListener("submit", (event) => {
   event.preventDefault();
   showScreen("screen-mode");
@@ -68,11 +101,10 @@ function startEntryPhase(enterBtn) {
   if (state.mode === "mash") {
     let clicks = 0;
     const phaseStart = performance.now();
-    const onClick = () => { clicks += 1; };
-    enterBtn.addEventListener("click", onClick);
+    const unbind = bindTrigger(enterBtn, () => { clicks += 1; });
 
     setTimeout(() => {
-      enterBtn.removeEventListener("click", onClick);
+      unbind();
       const elapsedSec = (performance.now() - phaseStart) / 1000;
       const cps = clicks / elapsedSec;
       state.entryScore = normalizeCps(cps);
@@ -80,13 +112,12 @@ function startEntryPhase(enterBtn) {
     }, MASH_DURATION_MS);
   } else {
     const goAt = performance.now();
-    const onClick = () => {
-      enterBtn.removeEventListener("click", onClick);
+    const unbind = bindTrigger(enterBtn, () => {
+      unbind();
       const reactionMs = performance.now() - goAt;
       state.entryScore = normalizeReactionMs(reactionMs);
       startQueuePhase();
-    };
-    enterBtn.addEventListener("click", onClick);
+    });
   }
 }
 
@@ -119,13 +150,12 @@ function startSavePhase() {
     saveBtn.style.visibility = "visible";
     const appearAt = performance.now();
 
-    const onClick = () => {
-      saveBtn.removeEventListener("click", onClick);
+    const unbind = bindTrigger(saveBtn, () => {
+      unbind();
       const reactionMs = performance.now() - appearAt;
       state.saveScore = normalizeReactionMs(reactionMs);
       startLoadingPhase();
-    };
-    saveBtn.addEventListener("click", onClick);
+    });
   }, appearDelay);
 }
 
@@ -187,4 +217,11 @@ function showResult() {
   } else {
     shareBtn.style.display = "none";
   }
+
+  document.getElementById("result-replay").onclick = () => {
+    state.mode = null;
+    state.entryScore = null;
+    state.saveScore = null;
+    showScreen("screen-mode");
+  };
 }

@@ -1,7 +1,7 @@
 :root {
   --maroon: #8b1a1a;
   --maroon-dark: #5c1010;
-  --bg: #f4f4f4;
+  --bg: #eef0f2;
   --card-bg: #ffffff;
 }
 
@@ -14,18 +14,41 @@ body {
   color: #222;
 }
 
+/* Header */
+
 .site-header {
   background: var(--maroon);
   color: white;
-  padding: 8px 16px;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand, .brand-service {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.brand-service { text-align: right; }
+
+.brand-kr, .service-kr { font-weight: bold; font-size: 1.05rem; }
+.brand-en, .service-en { font-size: 0.68rem; opacity: 0.85; }
+
+.disclaimer {
+  background: #fff3cd;
+  color: #7a5b00;
   text-align: center;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
+  margin: 0;
+  padding: 6px 10px;
 }
 
 #app {
   max-width: 480px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 24px 16px 48px;
 }
 
 .screen { display: none; }
@@ -46,30 +69,227 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.panel-card {
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+/* Login */
+
+.login-screen {
+  background: linear-gradient(180deg, #a9c9e8 0%, #d6e6c9 60%, #b7cf9e 100%);
+  margin: -24px -16px 0;
+  padding: 48px 16px;
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.login-card h1 { font-size: 1.3rem; margin: 0 0 12px; }
+
+.lang-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.lang-tab {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.lang-tab.active {
+  border-color: var(--maroon);
+  color: var(--maroon);
+  font-weight: bold;
+}
+
+#login-form { display: flex; flex-direction: column; gap: 10px; }
+
+#login-form input {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.login-hint { font-size: 0.72rem; color: #999; margin: -2px 0 4px; }
+
+#login-submit { width: 100%; padding: 12px; font-weight: bold; }
+
+.server-time { font-size: 0.75rem; color: #999; margin-top: 14px; }
+
+/* Mode select */
+
+.mode-btn {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 16px;
+  text-align: left;
+}
+
+.mode-btn small {
+  display: block;
+  font-weight: normal;
+  opacity: 0.85;
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+/* Standby */
+
+.standby-card { text-align: center; }
+
+.student-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #777;
+  margin-bottom: 16px;
+}
+
+.standby-banner {
+  background: #fdeaea;
+  color: var(--maroon-dark);
+  border: 1px solid #f3c2c2;
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 0.9rem;
+}
+
+.standby-sub { font-size: 0.8rem; color: #888; margin: 8px 0 0; }
+
+#standby-countdown {
+  font-size: 2.6rem;
+  font-weight: bold;
+  color: var(--maroon);
+  margin: 8px 0 20px;
+}
+
+.enter-btn {
+  width: 100%;
+  padding: 18px;
+  border-radius: 999px;
+  font-weight: bold;
+}
+
+.enter-btn small {
+  display: block;
+  font-weight: normal;
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+/* Queue */
+
 .queue-card {
   background: var(--card-bg);
   border-top: 6px solid var(--maroon);
   border-radius: 8px;
-  padding: 24px;
+  padding: 28px 24px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.queue-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--maroon);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  margin: 0 auto 12px;
 }
 
 .queue-card-title {
   color: var(--maroon);
   font-weight: bold;
+  margin: 0 0 12px;
 }
 
+.queue-label { margin: 0; color: #555; font-size: 0.9rem; }
+
 #queue-count {
-  font-size: 2.5rem;
+  font-size: 2.8rem;
   font-weight: bold;
   color: var(--maroon-dark);
+  margin: 4px 0 16px;
 }
+
+.queue-note { font-size: 0.72rem; color: #999; line-height: 1.5; }
+
+/* Course list / save */
+
+.courselist-card { text-align: left; }
+
+.courselist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 3px solid var(--maroon);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  font-weight: bold;
+}
+
+.pill-save, .pill-save-preview {
+  background: var(--maroon);
+  color: white;
+  border-radius: 999px;
+  padding: 6px 18px;
+  font-size: 0.85rem;
+}
+
+.pill-save-preview { opacity: 0.5; }
+
+.dummy-course-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.dummy-course-table th {
+  background: #f5f5f5;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.dummy-course-table td {
+  padding: 6px 8px;
+  border-top: 1px solid #eee;
+}
+
+/* Loading */
+
+.loading-card { padding: 40px; }
 
 .spinner {
   width: 48px;
   height: 48px;
-  margin: 40px auto;
+  margin: 0 auto;
   border: 5px solid #eee;
   border-top-color: var(--maroon);
   border-radius: 50%;
@@ -80,6 +300,42 @@ button:disabled {
   to { transform: rotate(360deg); }
 }
 
-#screen-mode button.selected {
-  outline: 3px solid var(--maroon-dark);
+/* Toast */
+
+.toast-card {
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 28px 20px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.toast-check {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #2e9e4f;
+  color: white;
+  font-size: 1.4rem;
+  line-height: 44px;
+  margin: 0 auto 12px;
+}
+
+/* Result */
+
+.result-card h2 { color: var(--maroon-dark); margin-bottom: 4px; }
+.result-card canvas {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  border-radius: 8px;
+  margin: 12px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
 }

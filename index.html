@@ -8,62 +8,141 @@
 </head>
 <body>
   <header class="site-header">
-    <span class="disclaimer">⚠️ 비공식 연습용 게임 · 서강대학교 종합정보시스템과 무관</span>
+    <div class="brand">
+      <span class="brand-kr">서강대학교</span>
+      <span class="brand-en">SOGANG UNIVERSITY</span>
+    </div>
+    <div class="brand-service">
+      <span class="service-kr">수강신청</span>
+      <span class="service-en">Course Registration</span>
+    </div>
   </header>
+  <p class="disclaimer">⚠️ 비공식 연습용 게임 · 서강대학교 종합정보시스템과 무관</p>
 
   <main id="app">
-    <section id="screen-login" class="screen active">
-      <h1>수강신청 로그인</h1>
-      <form id="login-form">
-        <input type="text" placeholder="학번 (예: 20250000)" required />
-        <input type="password" placeholder="비밀번호" required />
-        <button type="submit" id="login-submit">LOGIN</button>
-      </form>
+    <section id="screen-login" class="screen active login-screen">
+      <div class="login-card">
+        <h1>수강신청 로그인</h1>
+        <div class="lang-tabs">
+          <span class="lang-tab active">KOREAN</span>
+          <span class="lang-tab">ENGLISH</span>
+        </div>
+        <form id="login-form">
+          <input type="text" placeholder="20250000" required />
+          <input type="password" placeholder="비밀번호" required />
+          <p class="login-hint">ID(학번)/PW는 세인트 포털시스템과 동일합니다.</p>
+          <button type="submit" id="login-submit">LOGIN</button>
+        </form>
+        <p class="server-time">현재 서버 시간 | <span id="server-clock">--:--:--</span></p>
+      </div>
     </section>
 
     <section id="screen-mode" class="screen">
-      <h2>연습 모드를 선택하세요</h2>
-      <button id="mode-mash">연타 모드</button>
-      <button id="mode-reaction">반응속도 모드</button>
+      <div class="panel-card">
+        <h2>연습 모드를 선택하세요</h2>
+        <button id="mode-mash" class="mode-btn">
+          연타 모드
+          <small>클릭 또는 Space / Enter 연타</small>
+        </button>
+        <button id="mode-reaction" class="mode-btn">
+          반응속도 모드
+          <small>신호가 뜨면 한 번만 클릭</small>
+        </button>
+      </div>
     </section>
 
     <section id="screen-standby" class="screen">
-      <p id="standby-message">지금은 수강신청 시간이 아닙니다.</p>
-      <p id="standby-countdown">7</p>
-      <button id="enter-btn" disabled>수강신청 들어가기</button>
+      <div class="panel-card standby-card">
+        <div class="student-info">
+          <span>학번: 20250000</span>
+          <span>학년: 4</span>
+        </div>
+        <p id="standby-message" class="standby-banner">
+          지금은 수강신청 시간이 아닙니다. 시작시간을 확인하세요.
+        </p>
+        <p class="standby-sub">대학 2026학년도 1학기 수강신청기간 시작까지</p>
+        <p id="standby-countdown">7</p>
+        <button id="enter-btn" class="enter-btn" disabled>
+          수강신청 들어가기
+          <small>Enter Course Registration</small>
+        </button>
+      </div>
     </section>
 
     <section id="screen-queue" class="screen">
       <div class="queue-card">
+        <div class="queue-logo">서강</div>
         <p class="queue-card-title">수강신청 접속 대기 안내</p>
-        <p>내 앞의 대기자 수:</p>
+        <p class="queue-label">내 앞의 대기자 수:</p>
         <p id="queue-count">0</p>
+        <p class="queue-note">
+          사용자가 많은 경우 접속이 원활하지 않을 수 있습니다.<br />
+          잠시만 기다려주세요.
+        </p>
       </div>
     </section>
 
     <section id="screen-courselist" class="screen">
-      <p>초급스페인어 검색 중...</p>
+      <div class="panel-card courselist-card">
+        <div class="courselist-header">
+          <span>수강신청 - 2026학년도 1학기</span>
+          <span class="pill-save-preview">저장</span>
+        </div>
+        <table class="dummy-course-table">
+          <thead>
+            <tr><th>과목번호</th><th>교과목명</th><th>학점</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>LCU4030-01</td><td>초급스페인어</td><td>3.00</td></tr>
+            <tr><td>LCU4035-01</td><td>초급러시아어</td><td>3.00</td></tr>
+            <tr><td>COR1007-01</td><td>성찰과성장</td><td>1.00</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <section id="screen-save" class="screen">
-      <button id="save-btn">저장</button>
+      <div class="panel-card courselist-card">
+        <div class="courselist-header">
+          <span>수강신청 - 2026학년도 1학기</span>
+          <button id="save-btn" class="pill-save">저장</button>
+        </div>
+        <table class="dummy-course-table">
+          <thead>
+            <tr><th>과목번호</th><th>교과목명</th><th>학점</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>LCU4030-01</td><td>초급스페인어</td><td>3.00</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <section id="screen-loading" class="screen">
-      <div class="spinner"></div>
+      <div class="panel-card loading-card">
+        <div class="spinner"></div>
+      </div>
     </section>
 
     <section id="screen-toast" class="screen">
-      <p id="toast-message">수강신청 되었습니다.</p>
+      <div class="toast-card">
+        <div class="toast-check">✓</div>
+        <p id="toast-message">수강신청 되었습니다.</p>
+      </div>
     </section>
 
     <section id="screen-result" class="screen">
-      <h2 id="result-grade"></h2>
-      <p id="result-desc"></p>
-      <p id="result-best"></p>
-      <canvas id="result-canvas" width="600" height="800"></canvas>
-      <button id="result-download">이미지 저장</button>
-      <button id="result-share">공유하기</button>
+      <div class="panel-card result-card">
+        <h2 id="result-grade"></h2>
+        <p id="result-desc"></p>
+        <p id="result-best"></p>
+        <canvas id="result-canvas" width="600" height="800"></canvas>
+        <div class="result-actions">
+          <button id="result-download">이미지 저장</button>
+          <button id="result-share">공유하기</button>
+          <button id="result-replay">다시 하기</button>
+        </div>
+      </div>
     </section>
   </main>
 
