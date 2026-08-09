@@ -22,11 +22,11 @@ export function combineScores(entryScore, saveScore) {
 }
 
 export const GRADES = [
-  { min: 92, name: "사이버럭카", desc: "전설의 클릭력. 인기과목은 다 네 것." },
-  { min: 78, name: "수강신청 고인물", desc: "웬만한 과목은 다 잡는다." },
-  { min: 58, name: "평범한 새내기", desc: "운이 나쁘면 담당자에게 메일 쓸 각오." },
-  { min: 38, name: "장바구니만 채운 자", desc: "마음만 앞섰다." },
-  { min: 0, name: "연습 좀 더 해라", desc: "이대로면 인기과목은 못 잡는다. 알람부터 3개 맞춰라." },
+  { min: 92, rank: "S", emoji: "🏆", color: "#f5a623", name: "사이버럭카", desc: "전설의 클릭력. 인기과목은 다 네 것." },
+  { min: 78, rank: "A", emoji: "🔥", color: "#4a90d9", name: "수강신청 고인물", desc: "웬만한 과목은 다 잡는다." },
+  { min: 58, rank: "B", emoji: "🙂", color: "#5cb85c", name: "평범한 새내기", desc: "운이 나쁘면 담당자에게 메일 쓸 각오." },
+  { min: 38, rank: "C", emoji: "😅", color: "#e8a13c", name: "장바구니만 채운 자", desc: "마음만 앞섰다." },
+  { min: 0, rank: "D", emoji: "💀", color: "#c0392b", name: "연습 좀 더 해라", desc: "이대로면 인기과목은 못 잡는다. 알람부터 3개 맞춰라." },
 ];
 
 export function gradeForScore(score) {

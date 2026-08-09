@@ -208,6 +208,14 @@ button:disabled {
   opacity: 0.85;
 }
 
+.entry-hint {
+  min-height: 1.2em;
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  color: var(--maroon-dark);
+  font-weight: bold;
+}
+
 /* Queue */
 
 .queue-card {
@@ -291,6 +299,11 @@ button:disabled {
   border-top: 1px solid #eee;
 }
 
+.dummy-course-table .target-row td {
+  background: #fff6e0;
+  font-weight: bold;
+}
+
 /* Loading */
 
 .loading-card { padding: 40px; }
@@ -332,7 +345,86 @@ button:disabled {
 
 /* Result */
 
-.result-card h2 { color: var(--maroon-dark); margin-bottom: 4px; }
+.result-card {
+  background: radial-gradient(circle at top, #fffaf0 0%, var(--card-bg) 70%);
+}
+
+.result-newbest {
+  min-height: 1.4em;
+  margin: 0 0 4px;
+  font-weight: bold;
+  color: #b8860b;
+  animation: newbest-pulse 1s ease-in-out infinite;
+}
+
+@keyframes newbest-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.result-badge {
+  --grade-color: #999;
+  width: 110px;
+  height: 110px;
+  margin: 4px auto 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, var(--grade-color) 70%);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25), inset 0 0 0 4px rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: badge-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes badge-pop {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.result-rank {
+  font-size: 3.2rem;
+  font-weight: 900;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+.result-emoji { font-size: 1.8rem; margin: 8px 0 0; }
+
+.result-card h2 { color: var(--maroon-dark); margin: 4px 0; }
+.result-card > p#result-desc { color: #666; margin: 0 0 16px; }
+
+.result-stats { text-align: left; margin: 0 0 16px; }
+
+.result-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+}
+
+.result-stat-label { width: 64px; flex-shrink: 0; color: #666; }
+
+.result-bar {
+  flex: 1;
+  height: 10px;
+  background: #eee;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.result-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--maroon);
+  border-radius: 999px;
+  transition: width 0.6s ease-out;
+}
+
+.result-stat-value { width: 36px; flex-shrink: 0; text-align: right; font-weight: bold; }
+
+#result-best { font-size: 0.85rem; color: #888; }
+
 .result-card canvas {
   width: 100%;
   max-width: 320px;
@@ -348,3 +440,5 @@ button:disabled {
   gap: 8px;
   justify-content: center;
 }
+
+#result-replay { background: #2e7d32; }

@@ -5,7 +5,7 @@ import { drawResultCard } from "./resultCard.js";
 
 const STANDBY_COUNTDOWN_SEC = 7;
 const MASH_DURATION_MS = 3000;
-const COURSELIST_DELAY_MS = 500;
+const REACTION_SIGNAL_DELAY_RANGE_MS = [800, 2500];
 const LOADING_DELAY_MS = 900;
 const SAVE_APPEAR_DELAY_RANGE_MS = [500, 1500];
 
@@ -80,25 +80,26 @@ function startStandby() {
   showScreen("screen-standby");
   const enterBtn = document.getElementById("enter-btn");
   const countdownEl = document.getElementById("standby-countdown");
-  enterBtn.disabled = true;
 
+  // 카운트다운은 분위기용 연출일 뿐, 버튼은 화면이 뜨자마자 바로 클릭/Space/Enter로
+  // 반응한다 — 실제 수강신청처럼 "정각 전에는 눌러도 소용없음"을 강제하지 않는다.
   let remaining = STANDBY_COUNTDOWN_SEC;
   countdownEl.textContent = String(remaining);
 
   const timer = setInterval(() => {
     remaining -= 1;
-    countdownEl.textContent = String(Math.max(remaining, 0));
-    if (remaining <= 0) {
-      clearInterval(timer);
-      countdownEl.textContent = "지금 클릭하세요!";
-      enterBtn.disabled = false;
-      startEntryPhase(enterBtn);
-    }
+    countdownEl.textContent = remaining > 0 ? String(remaining) : "정각!";
+    if (remaining <= 0) clearInterval(timer);
   }, 1000);
+
+  startEntryPhase(enterBtn);
 }
 
 function startEntryPhase(enterBtn) {
+  const hintEl = document.getElementById("entry-hint");
+
   if (state.mode === "mash") {
+    hintEl.textContent = "지금 바로 클릭하거나 Space/Enter를 연타하세요!";
     let clicks = 0;
     const phaseStart = performance.now();
     const unbind = bindTrigger(enterBtn, () => { clicks += 1; });
@@ -111,13 +112,27 @@ function startEntryPhase(enterBtn) {
       startQueuePhase();
     }, MASH_DURATION_MS);
   } else {
-    const goAt = performance.now();
-    const unbind = bindTrigger(enterBtn, () => {
-      unbind();
-      const reactionMs = performance.now() - goAt;
-      state.entryScore = normalizeReactionMs(reactionMs);
-      startQueuePhase();
+    hintEl.textContent = "신호가 뜰 때까지 기다리세요...";
+    const signalDelay = randomBetween(...REACTION_SIGNAL_DELAY_RANGE_MS);
+    let signalGiven = false;
+
+    const earlyUnbind = bindTrigger(enterBtn, () => {
+      if (!signalGiven) hintEl.textContent = "아직이에요! 신호를 기다려주세요.";
     });
+
+    setTimeout(() => {
+      earlyUnbind();
+      signalGiven = true;
+      hintEl.textContent = "지금 클릭하세요!";
+      const goAt = performance.now();
+
+      const unbind = bindTrigger(enterBtn, () => {
+        unbind();
+        const reactionMs = performance.now() - goAt;
+        state.entryScore = normalizeReactionMs(reactionMs);
+        startQueuePhase();
+      });
+    }, signalDelay);
   }
 }
 
@@ -131,12 +146,6 @@ async function startQueuePhase() {
     await wait(step.delayMs);
   }
 
-  await startCourseListPhase();
-}
-
-async function startCourseListPhase() {
-  showScreen("screen-courselist");
-  await wait(COURSELIST_DELAY_MS);
   startSavePhase();
 }
 
@@ -178,18 +187,32 @@ function showResult() {
   const overallScore = combineScores(state.entryScore, state.saveScore);
   const grade = gradeForScore(overallScore);
 
+  const badgeEl = document.getElementById("result-badge");
+  badgeEl.style.setProperty("--grade-color", grade.color);
+  // 재실행 시 팝 애니메이션이 다시 재생되도록 리플로우를 강제한다.
+  badgeEl.style.animation = "none";
+  void badgeEl.offsetWidth;
+  badgeEl.style.animation = "";
+
+  document.getElementById("result-rank").textContent = grade.rank;
+  document.getElementById("result-emoji").textContent = grade.emoji;
   document.getElementById("result-grade").textContent = grade.name;
   document.getElementById("result-desc").textContent = grade.desc;
+
+  document.getElementById("bar-entry").style.width = `${Math.round(state.entryScore)}%`;
+  document.getElementById("stat-entry").textContent = `${Math.round(state.entryScore)}`;
+  document.getElementById("bar-save").style.width = `${Math.round(state.saveScore)}%`;
+  document.getElementById("stat-save").textContent = `${Math.round(state.saveScore)}`;
 
   const previousBest = loadBestScore(window.localStorage);
   saveBestScore(overallScore, window.localStorage);
   const newBest = loadBestScore(window.localStorage);
+  const isNewBest = previousBest !== null && newBest > previousBest;
+
+  document.getElementById("result-newbest").textContent = isNewBest ? "🎉 신기록 갱신!" : "";
 
   const bestEl = document.getElementById("result-best");
-  bestEl.textContent =
-    previousBest !== null && newBest > previousBest
-      ? `개인 최고 기록 갱신! (${Math.round(newBest)}점)`
-      : `개인 최고 기록: ${Math.round(newBest)}점`;
+  bestEl.textContent = `개인 최고 기록: ${Math.round(newBest)}점`;
 
   const canvas = document.getElementById("result-canvas");
   drawResultCard(canvas, { grade, overallScore });

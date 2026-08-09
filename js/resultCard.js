@@ -12,9 +12,17 @@ export function drawResultCard(canvas, { grade, overallScore }) {
   ctx.textAlign = "center";
   ctx.fillText("서강대 수강신청 클릭 연습", width / 2, 48);
 
+  ctx.fillStyle = grade.color ?? "#5c1010";
+  ctx.beginPath();
+  ctx.arc(width / 2, height / 2 - 140, 60, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 64px sans-serif";
+  ctx.fillText(grade.rank ?? "", width / 2, height / 2 - 122);
+
   ctx.fillStyle = "#5c1010";
   ctx.font = "bold 48px sans-serif";
-  ctx.fillText(grade.name, width / 2, height / 2 - 40);
+  ctx.fillText(`${grade.emoji ?? ""} ${grade.name}`, width / 2, height / 2 - 40);
 
   ctx.fillStyle = "#333333";
   ctx.font = "20px sans-serif";

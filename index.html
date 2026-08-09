@@ -62,10 +62,11 @@
         </p>
         <p class="standby-sub">대학 2026학년도 1학기 수강신청기간 시작까지</p>
         <p id="standby-countdown">7</p>
-        <button id="enter-btn" class="enter-btn" disabled>
+        <button id="enter-btn" class="enter-btn">
           수강신청 들어가기
           <small>Enter Course Registration</small>
         </button>
+        <p id="entry-hint" class="entry-hint"></p>
       </div>
     </section>
 
@@ -82,37 +83,20 @@
       </div>
     </section>
 
-    <section id="screen-courselist" class="screen">
-      <div class="panel-card courselist-card">
-        <div class="courselist-header">
-          <span>수강신청 - 2026학년도 1학기</span>
-          <span class="pill-save-preview">저장</span>
-        </div>
-        <table class="dummy-course-table">
-          <thead>
-            <tr><th>과목번호</th><th>교과목명</th><th>학점</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>LCU4030-01</td><td>초급스페인어</td><td>3.00</td></tr>
-            <tr><td>LCU4035-01</td><td>초급러시아어</td><td>3.00</td></tr>
-            <tr><td>COR1007-01</td><td>성찰과성장</td><td>1.00</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
     <section id="screen-save" class="screen">
       <div class="panel-card courselist-card">
         <div class="courselist-header">
           <span>수강신청 - 2026학년도 1학기</span>
-          <button id="save-btn" class="pill-save">저장</button>
+          <button id="save-btn" class="pill-save" style="visibility: hidden;">저장</button>
         </div>
         <table class="dummy-course-table">
           <thead>
             <tr><th>과목번호</th><th>교과목명</th><th>학점</th></tr>
           </thead>
           <tbody>
-            <tr><td>LCU4030-01</td><td>초급스페인어</td><td>3.00</td></tr>
+            <tr class="target-row"><td>LCU4030-01</td><td>초급스페인어</td><td>3.00</td></tr>
+            <tr><td>LCU4035-01</td><td>초급러시아어</td><td>3.00</td></tr>
+            <tr><td>COR1007-01</td><td>성찰과성장</td><td>1.00</td></tr>
           </tbody>
         </table>
       </div>
@@ -133,8 +117,29 @@
 
     <section id="screen-result" class="screen">
       <div class="panel-card result-card">
+        <p id="result-newbest" class="result-newbest"></p>
+
+        <div id="result-badge" class="result-badge">
+          <span id="result-rank" class="result-rank"></span>
+        </div>
+        <p id="result-emoji" class="result-emoji"></p>
+
         <h2 id="result-grade"></h2>
         <p id="result-desc"></p>
+
+        <div class="result-stats">
+          <div class="result-stat-row">
+            <span class="result-stat-label">입장 속도</span>
+            <div class="result-bar"><div id="bar-entry" class="result-bar-fill"></div></div>
+            <span id="stat-entry" class="result-stat-value"></span>
+          </div>
+          <div class="result-stat-row">
+            <span class="result-stat-label">저장 반응</span>
+            <div class="result-bar"><div id="bar-save" class="result-bar-fill"></div></div>
+            <span id="stat-save" class="result-stat-value"></span>
+          </div>
+        </div>
+
         <p id="result-best"></p>
         <canvas id="result-canvas" width="600" height="800"></canvas>
         <div class="result-actions">
