@@ -1,4 +1,12 @@
-import { normalizeCps, normalizeReactionMs, combineScores, gradeForScore } from "./scoring.js";
+import {
+  normalizeCps,
+  normalizeReactionMs,
+  combineScores,
+  rankForCps,
+  rankForReactionMs,
+  combineRanks,
+  gradeForRank,
+} from "./scoring.js";
 import { buildQueueSteps } from "./queueSim.js";
 import { loadBestScore, saveBestScore } from "./storage.js";
 import { drawResultCard } from "./resultCard.js";
@@ -7,28 +15,14 @@ const MASH_DURATION_MS = 3000;
 const LOADING_DELAY_MS = 900;
 const SAVE_APPEAR_DELAY_RANGE_MS = [500, 1500];
 
+const REACTION_SIGNAL_DELAY_RANGE_MS = [500, 1800];
+
 // 시뮬레이션 서버 시간: 로그인하는 순간이 10:29:50, 수강신청 정각은 10:30:00.
+// 이건 순전히 분위기용 시계다 — 입장 버튼은 이 시계와 무관하게 화면이 뜨자마자
+// 바로 클릭/Space/Enter를 받는다 (정각 전이라고 막지 않는다). 그래서 배너
+// 문구도 "아직 안 됨"처럼 막는 느낌이 아니라 정보 안내 톤으로만 적는다.
 const SIM_OPEN_SECONDS = 10 * 3600 + 30 * 60 + 0;
 let simSeconds = 10 * 3600 + 29 * 60 + 50;
-
-// 입장 버튼의 실제 "정각" 신호는 이 시뮬레이션 시계 하나로 통일한다.
-// 예전에는 카운트다운(시계)과 별개로 입장 단계 내부에서 또 다른 랜덤 대기를
-// 돌려서 "아직 정각 아님" 배너와 "지금 클릭하세요!" 문구가 동시에 뜨는
-// 모순이 있었다. 정각이 되는 순간에만 실제로 클릭이 카운트된다.
-let isRegistrationOpen = simSeconds >= SIM_OPEN_SECONDS;
-let openWaiters = [];
-
-function notifyRegistrationOpen() {
-  isRegistrationOpen = true;
-  const waiters = openWaiters;
-  openWaiters = [];
-  waiters.forEach((callback) => callback());
-}
-
-function whenRegistrationOpen(callback) {
-  if (isRegistrationOpen) callback();
-  else openWaiters.push(callback);
-}
 
 const state = {
   mode: null, // "mash" | "reaction"
@@ -108,11 +102,11 @@ function startSimClock() {
     const remaining = SIM_OPEN_SECONDS - simSeconds;
     if (remaining > 0) {
       countdownEl.textContent = String(remaining);
-      bannerEl.textContent = "지금은 수강신청 시간이 아닙니다. 시작시간을 확인하세요.";
+      bannerEl.textContent = "수강신청 시작 예정 시각: 10:30:00";
       bannerEl.classList.remove("standby-banner--open");
     } else {
       countdownEl.textContent = "OPEN";
-      bannerEl.textContent = "수강신청이 시작되었습니다! 지금 클릭하세요.";
+      bannerEl.textContent = "수강신청이 시작되었습니다!";
       bannerEl.classList.add("standby-banner--open");
     }
   };
@@ -120,9 +114,6 @@ function startSimClock() {
   render();
   setInterval(() => {
     simSeconds += 1;
-    if (!isRegistrationOpen && simSeconds >= SIM_OPEN_SECONDS) {
-      notifyRegistrationOpen();
-    }
     render();
   }, 1000);
 }
@@ -153,44 +144,50 @@ function startStandby() {
 function startEntryPhase(enterBtn) {
   const hintEl = document.getElementById("entry-hint");
 
-  // 정각 전에도 클릭/Space/Enter는 항상 받아준다(버튼을 disabled로 막지
-  // 않는다) — 다만 아직 점수에 반영되진 않으므로, 배너("아직 아닙니다")와
-  // 모순되지 않는 중립적인 문구만 보여준다.
-  hintEl.textContent = "정각이 되면 자동으로 시작됩니다.";
-  const earlyUnbind = bindTrigger(enterBtn, () => {});
+  if (state.mode === "mash") {
+    hintEl.textContent = "지금 바로 클릭 또는 Space/Enter로 연타하세요!";
+    let clicks = 0;
+    let windowStart = null;
+    let settled = false;
 
-  whenRegistrationOpen(() => {
-    earlyUnbind();
+    // 3초 타이머는 화면이 뜬 시점이 아니라 "첫 클릭" 시점부터 시작한다.
+    // 그래야 아무것도 누르지 않았는데 시간이 다 되어 저절로 다음 화면으로
+    // 넘어가는 일이 없다 — 최소 한 번은 눌러야 라운드가 진행된다.
+    const unbind = bindTrigger(enterBtn, () => {
+      if (settled) return;
+      clicks += 1;
+      if (windowStart === null) {
+        windowStart = performance.now();
+        setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          unbind();
+          const elapsedSec = (performance.now() - windowStart) / 1000;
+          const cps = clicks / elapsedSec;
+          state.entryScore = normalizeCps(cps);
+          state.entryRaw = { type: "cps", value: cps };
+          startQueuePhase();
+        }, MASH_DURATION_MS);
+      }
+    });
+  } else {
+    // 반응속도 모드는 예측 방지를 위해 짧은 랜덤 대기 후 신호를 준다.
+    // 버튼은 처음부터 클릭 가능하지만, 신호 전 클릭은 점수에 반영되지 않고
+    // "아직이에요" 힌트만 보여준다.
+    hintEl.textContent = "신호가 뜰 때까지 기다리세요...";
+    const signalDelay = randomBetween(...REACTION_SIGNAL_DELAY_RANGE_MS);
+    let signalGiven = false;
 
-    if (state.mode === "mash") {
-      hintEl.textContent = "지금 클릭 또는 Space/Enter로 연타하세요!";
-      let clicks = 0;
-      let windowStart = null;
-      let settled = false;
+    const earlyUnbind = bindTrigger(enterBtn, () => {
+      if (!signalGiven) hintEl.textContent = "아직이에요! 신호를 기다려주세요.";
+    });
 
-      // 3초 타이머는 화면이 뜬 시점이 아니라 "첫 클릭" 시점부터 시작한다.
-      // 그래야 아무것도 누르지 않았는데 시간이 다 되어 저절로 다음 화면으로
-      // 넘어가는 일이 없다 — 최소 한 번은 눌러야 라운드가 진행된다.
-      const unbind = bindTrigger(enterBtn, () => {
-        if (settled) return;
-        clicks += 1;
-        if (windowStart === null) {
-          windowStart = performance.now();
-          setTimeout(() => {
-            if (settled) return;
-            settled = true;
-            unbind();
-            const elapsedSec = (performance.now() - windowStart) / 1000;
-            const cps = clicks / elapsedSec;
-            state.entryScore = normalizeCps(cps);
-            state.entryRaw = { type: "cps", value: cps };
-            startQueuePhase();
-          }, MASH_DURATION_MS);
-        }
-      });
-    } else {
+    setTimeout(() => {
+      earlyUnbind();
+      signalGiven = true;
       hintEl.textContent = "지금 클릭하세요!";
       const goAt = performance.now();
+
       const unbind = bindTrigger(enterBtn, () => {
         unbind();
         const reactionMs = performance.now() - goAt;
@@ -198,8 +195,8 @@ function startEntryPhase(enterBtn) {
         state.entryRaw = { type: "ms", value: reactionMs };
         startQueuePhase();
       });
-    }
-  });
+    }, signalDelay);
+  }
 }
 
 async function startQueuePhase() {
@@ -251,8 +248,18 @@ async function startTossPhase() {
 
 function showResult() {
   showScreen("screen-result");
+
+  // 등급은 명확한 ms/CPS 구간표로 정한다 (scoring.js 참고) — 입장/저장 중
+  // 더 나쁜 쪽 등급이 최종 등급이 된다. 0-100 정규화 점수는 진행 바와
+  // 개인 최고 기록 비교용으로만 쓴다.
+  const entryRank =
+    state.entryRaw.type === "cps"
+      ? rankForCps(state.entryRaw.value)
+      : rankForReactionMs(state.entryRaw.value);
+  const saveRank = rankForReactionMs(state.saveRaw);
+  const grade = gradeForRank(combineRanks(entryRank, saveRank));
+
   const overallScore = combineScores(state.entryScore, state.saveScore);
-  const grade = gradeForScore(overallScore);
 
   const badgeEl = document.getElementById("result-badge");
   badgeEl.style.setProperty("--grade-color", grade.color);
