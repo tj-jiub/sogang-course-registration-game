@@ -4,13 +4,31 @@ import { loadBestScore, saveBestScore } from "./storage.js";
 import { drawResultCard } from "./resultCard.js";
 
 const MASH_DURATION_MS = 3000;
-const REACTION_SIGNAL_DELAY_RANGE_MS = [800, 2500];
 const LOADING_DELAY_MS = 900;
 const SAVE_APPEAR_DELAY_RANGE_MS = [500, 1500];
 
 // 시뮬레이션 서버 시간: 로그인하는 순간이 10:29:50, 수강신청 정각은 10:30:00.
 const SIM_OPEN_SECONDS = 10 * 3600 + 30 * 60 + 0;
 let simSeconds = 10 * 3600 + 29 * 60 + 50;
+
+// 입장 버튼의 실제 "정각" 신호는 이 시뮬레이션 시계 하나로 통일한다.
+// 예전에는 카운트다운(시계)과 별개로 입장 단계 내부에서 또 다른 랜덤 대기를
+// 돌려서 "아직 정각 아님" 배너와 "지금 클릭하세요!" 문구가 동시에 뜨는
+// 모순이 있었다. 정각이 되는 순간에만 실제로 클릭이 카운트된다.
+let isRegistrationOpen = simSeconds >= SIM_OPEN_SECONDS;
+let openWaiters = [];
+
+function notifyRegistrationOpen() {
+  isRegistrationOpen = true;
+  const waiters = openWaiters;
+  openWaiters = [];
+  waiters.forEach((callback) => callback());
+}
+
+function whenRegistrationOpen(callback) {
+  if (isRegistrationOpen) callback();
+  else openWaiters.push(callback);
+}
 
 const state = {
   mode: null, // "mash" | "reaction"
@@ -102,6 +120,9 @@ function startSimClock() {
   render();
   setInterval(() => {
     simSeconds += 1;
+    if (!isRegistrationOpen && simSeconds >= SIM_OPEN_SECONDS) {
+      notifyRegistrationOpen();
+    }
     render();
   }, 1000);
 }
@@ -126,45 +147,50 @@ document.getElementById("mode-reaction").addEventListener("click", () => {
 function startStandby() {
   showScreen("screen-standby");
   const enterBtn = document.getElementById("enter-btn");
-
-  // 정각까지 남은 카운트다운은 startSimClock()이 매초 갱신하는 분위기용 연출일
-  // 뿐, 버튼은 화면이 뜨자마자 바로 클릭/Space/Enter로 반응한다 — 실제
-  // 수강신청처럼 "정각 전에는 눌러도 소용없음"을 강제하지 않는다.
   startEntryPhase(enterBtn);
 }
 
 function startEntryPhase(enterBtn) {
   const hintEl = document.getElementById("entry-hint");
 
-  if (state.mode === "mash") {
-    hintEl.textContent = "지금 바로 클릭하거나 Space/Enter를 연타하세요!";
-    let clicks = 0;
-    const phaseStart = performance.now();
-    const unbind = bindTrigger(enterBtn, () => { clicks += 1; });
+  // 정각 전에도 클릭/Space/Enter는 항상 받아준다(버튼을 disabled로 막지
+  // 않는다) — 다만 아직 점수에 반영되진 않으므로, 배너("아직 아닙니다")와
+  // 모순되지 않는 중립적인 문구만 보여준다.
+  hintEl.textContent = "정각이 되면 자동으로 시작됩니다.";
+  const earlyUnbind = bindTrigger(enterBtn, () => {});
 
-    setTimeout(() => {
-      unbind();
-      const elapsedSec = (performance.now() - phaseStart) / 1000;
-      const cps = clicks / elapsedSec;
-      state.entryScore = normalizeCps(cps);
-      state.entryRaw = { type: "cps", value: cps };
-      startQueuePhase();
-    }, MASH_DURATION_MS);
-  } else {
-    hintEl.textContent = "신호가 뜰 때까지 기다리세요...";
-    const signalDelay = randomBetween(...REACTION_SIGNAL_DELAY_RANGE_MS);
-    let signalGiven = false;
+  whenRegistrationOpen(() => {
+    earlyUnbind();
 
-    const earlyUnbind = bindTrigger(enterBtn, () => {
-      if (!signalGiven) hintEl.textContent = "아직이에요! 신호를 기다려주세요.";
-    });
+    if (state.mode === "mash") {
+      hintEl.textContent = "지금 클릭 또는 Space/Enter로 연타하세요!";
+      let clicks = 0;
+      let windowStart = null;
+      let settled = false;
 
-    setTimeout(() => {
-      earlyUnbind();
-      signalGiven = true;
+      // 3초 타이머는 화면이 뜬 시점이 아니라 "첫 클릭" 시점부터 시작한다.
+      // 그래야 아무것도 누르지 않았는데 시간이 다 되어 저절로 다음 화면으로
+      // 넘어가는 일이 없다 — 최소 한 번은 눌러야 라운드가 진행된다.
+      const unbind = bindTrigger(enterBtn, () => {
+        if (settled) return;
+        clicks += 1;
+        if (windowStart === null) {
+          windowStart = performance.now();
+          setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            unbind();
+            const elapsedSec = (performance.now() - windowStart) / 1000;
+            const cps = clicks / elapsedSec;
+            state.entryScore = normalizeCps(cps);
+            state.entryRaw = { type: "cps", value: cps };
+            startQueuePhase();
+          }, MASH_DURATION_MS);
+        }
+      });
+    } else {
       hintEl.textContent = "지금 클릭하세요!";
       const goAt = performance.now();
-
       const unbind = bindTrigger(enterBtn, () => {
         unbind();
         const reactionMs = performance.now() - goAt;
@@ -172,8 +198,8 @@ function startEntryPhase(enterBtn) {
         state.entryRaw = { type: "ms", value: reactionMs };
         startQueuePhase();
       });
-    }, signalDelay);
-  }
+    }
+  });
 }
 
 async function startQueuePhase() {
