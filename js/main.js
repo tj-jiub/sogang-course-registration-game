@@ -18,13 +18,14 @@ const SAVE_APPEAR_DELAY_RANGE_MS = [500, 1500];
 const REACTION_SIGNAL_DELAY_RANGE_MS = [500, 1800];
 
 // 시뮬레이션 서버 시간: 대기 화면에 들어서는 순간이 10:29:50, 수강신청
-// 정각은 10:30:00. 이건 순전히 분위기용 시계이고, 매 라운드(재도전 포함)
-// 대기 화면에 들어갈 때마다 10:29:50부터 새로 시작한다 — 페이지 로드 시점
-// 부터 계속 흐르게 하면 로그인/모드선택에 걸린 시간만큼 이미 정각을
-// 지나버려서 카운트다운이 뜰 새도 없이 항상 "OPEN"으로 보이는 문제가 있었다.
-// 입장 버튼은 이 시계와 무관하게 화면이 뜨자마자 바로 클릭/Space/Enter를
-// 받는다(정각 전이라고 막지 않는다) — 그래서 배너 문구도 "아직 안 됨"처럼
-// 막는 느낌이 아니라 정보 안내 톤으로만 적는다.
+// 정각은 10:30:00. 매 라운드(재도전 포함) 대기 화면에 들어갈 때마다
+// 10:29:50부터 새로 시작한다 — 페이지 로드 시점부터 계속 흐르게 하면
+// 로그인/모드선택에 걸린 시간만큼 이미 정각을 지나버려서 카운트다운이
+// 뜰 새도 없이 항상 "OPEN"으로 보이는 문제가 있었다.
+// 입장 버튼은 클릭/Space/Enter를 화면이 뜨자마자 항상 받아주긴 하지만
+// (disabled로 막지 않음), 실제로 점수에 반영되는 건 이 라운드의 시계가
+// 정각(10:30:00)에 도달한 뒤부터다. 그 전 클릭은 버튼이 눌리는 애니메이션만
+// 재생하고 "정각이 되면 시작됩니다" 같은 중립적인 힌트만 보여준다.
 const SIM_START_SECONDS = 10 * 3600 + 29 * 60 + 50;
 const SIM_OPEN_SECONDS = 10 * 3600 + 30 * 60 + 0;
 let standbyClockTimer = null;
@@ -94,7 +95,8 @@ function formatSimClock(totalSeconds) {
 }
 
 // 대기 화면에 들어갈 때마다 호출 — 이전 라운드에서 돌던 타이머가 있으면
-// 정리하고 10:29:50부터 새로 카운트다운을 시작한다.
+// 정리하고 10:29:50부터 새로 카운트다운을 시작한다. 이 라운드에서 정각이
+// 되는 순간 실행할 콜백을 등록할 수 있는 whenOpen()을 함께 돌려준다.
 function startStandbyClock() {
   if (standbyClockTimer !== null) clearInterval(standbyClockTimer);
 
@@ -103,6 +105,15 @@ function startStandbyClock() {
   const bannerEl = document.getElementById("standby-message");
 
   let roundSeconds = SIM_START_SECONDS;
+  let isOpen = false;
+  let waiters = [];
+
+  const notifyOpen = () => {
+    isOpen = true;
+    const pending = waiters;
+    waiters = [];
+    pending.forEach((callback) => callback());
+  };
 
   const render = () => {
     standbyClockEl.textContent = formatSimClock(roundSeconds);
@@ -122,8 +133,16 @@ function startStandbyClock() {
   render();
   standbyClockTimer = setInterval(() => {
     roundSeconds += 1;
+    if (!isOpen && roundSeconds >= SIM_OPEN_SECONDS) notifyOpen();
     render();
   }, 1000);
+
+  return {
+    whenOpen(callback) {
+      if (isOpen) callback();
+      else waiters.push(callback);
+    },
+  };
 }
 
 document.getElementById("server-clock").textContent = formatSimClock(SIM_START_SECONDS);
@@ -145,67 +164,77 @@ document.getElementById("mode-reaction").addEventListener("click", () => {
 
 function startStandby() {
   showScreen("screen-standby");
-  startStandbyClock();
+  const round = startStandbyClock();
   const enterBtn = document.getElementById("enter-btn");
-  startEntryPhase(enterBtn);
+  startEntryPhase(enterBtn, round);
 }
 
-function startEntryPhase(enterBtn) {
+function startEntryPhase(enterBtn, round) {
   const hintEl = document.getElementById("entry-hint");
 
-  if (state.mode === "mash") {
-    hintEl.textContent = "지금 바로 클릭 또는 Space/Enter로 연타하세요!";
-    let clicks = 0;
-    let windowStart = null;
-    let settled = false;
+  // 정각 전에도 클릭/Space/Enter는 받아준다(버튼을 disabled로 막지 않아
+  // 눌리는 애니메이션은 항상 재생된다) — 다만 실제로 라운드가 진행되는 건
+  // 이 라운드의 시계가 정각에 도달한 뒤부터다.
+  hintEl.textContent = "정각이 되면 시작됩니다.";
+  const earlyUnbind = bindTrigger(enterBtn, () => {});
 
-    // 3초 타이머는 화면이 뜬 시점이 아니라 "첫 클릭" 시점부터 시작한다.
-    // 그래야 아무것도 누르지 않았는데 시간이 다 되어 저절로 다음 화면으로
-    // 넘어가는 일이 없다 — 최소 한 번은 눌러야 라운드가 진행된다.
-    const unbind = bindTrigger(enterBtn, () => {
-      if (settled) return;
-      clicks += 1;
-      if (windowStart === null) {
-        windowStart = performance.now();
-        setTimeout(() => {
-          if (settled) return;
-          settled = true;
-          unbind();
-          const elapsedSec = (performance.now() - windowStart) / 1000;
-          const cps = clicks / elapsedSec;
-          state.entryScore = normalizeCps(cps);
-          state.entryRaw = { type: "cps", value: cps };
-          startQueuePhase();
-        }, MASH_DURATION_MS);
-      }
-    });
-  } else {
-    // 반응속도 모드는 예측 방지를 위해 짧은 랜덤 대기 후 신호를 준다.
-    // 버튼은 처음부터 클릭 가능하지만, 신호 전 클릭은 점수에 반영되지 않고
-    // "아직이에요" 힌트만 보여준다.
-    hintEl.textContent = "신호가 뜰 때까지 기다리세요...";
-    const signalDelay = randomBetween(...REACTION_SIGNAL_DELAY_RANGE_MS);
-    let signalGiven = false;
+  round.whenOpen(() => {
+    earlyUnbind();
 
-    const earlyUnbind = bindTrigger(enterBtn, () => {
-      if (!signalGiven) hintEl.textContent = "아직이에요! 신호를 기다려주세요.";
-    });
+    if (state.mode === "mash") {
+      hintEl.textContent = "지금 클릭 또는 Space/Enter로 연타하세요!";
+      let clicks = 0;
+      let windowStart = null;
+      let settled = false;
 
-    setTimeout(() => {
-      earlyUnbind();
-      signalGiven = true;
-      hintEl.textContent = "지금 클릭하세요!";
-      const goAt = performance.now();
-
+      // 3초 타이머는 정각이 된 시점이 아니라 "첫 클릭" 시점부터 시작한다.
+      // 그래야 정각이 지났는데 누르지 않았다고 시간이 다 되어 저절로
+      // 다음 화면으로 넘어가는 일이 없다 — 최소 한 번은 눌러야 진행된다.
       const unbind = bindTrigger(enterBtn, () => {
-        unbind();
-        const reactionMs = performance.now() - goAt;
-        state.entryScore = normalizeReactionMs(reactionMs);
-        state.entryRaw = { type: "ms", value: reactionMs };
-        startQueuePhase();
+        if (settled) return;
+        clicks += 1;
+        if (windowStart === null) {
+          windowStart = performance.now();
+          setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            unbind();
+            const elapsedSec = (performance.now() - windowStart) / 1000;
+            const cps = clicks / elapsedSec;
+            state.entryScore = normalizeCps(cps);
+            state.entryRaw = { type: "cps", value: cps };
+            startQueuePhase();
+          }, MASH_DURATION_MS);
+        }
       });
-    }, signalDelay);
-  }
+    } else {
+      // 반응속도 모드는 정각이 된 뒤에도 예측 방지를 위해 짧은 랜덤 대기
+      // 후 신호를 준다. 신호 전 클릭은 점수에 반영되지 않고 "아직이에요"
+      // 힌트만 보여준다.
+      hintEl.textContent = "신호가 뜰 때까지 기다리세요...";
+      const signalDelay = randomBetween(...REACTION_SIGNAL_DELAY_RANGE_MS);
+      let signalGiven = false;
+
+      const lateEarlyUnbind = bindTrigger(enterBtn, () => {
+        if (!signalGiven) hintEl.textContent = "아직이에요! 신호를 기다려주세요.";
+      });
+
+      setTimeout(() => {
+        lateEarlyUnbind();
+        signalGiven = true;
+        hintEl.textContent = "지금 클릭하세요!";
+        const goAt = performance.now();
+
+        const unbind = bindTrigger(enterBtn, () => {
+          unbind();
+          const reactionMs = performance.now() - goAt;
+          state.entryScore = normalizeReactionMs(reactionMs);
+          state.entryRaw = { type: "ms", value: reactionMs };
+          startQueuePhase();
+        });
+      }, signalDelay);
+    }
+  });
 }
 
 async function startQueuePhase() {
