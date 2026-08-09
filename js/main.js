@@ -3,16 +3,21 @@ import { buildQueueSteps } from "./queueSim.js";
 import { loadBestScore, saveBestScore } from "./storage.js";
 import { drawResultCard } from "./resultCard.js";
 
-const STANDBY_COUNTDOWN_SEC = 7;
 const MASH_DURATION_MS = 3000;
 const REACTION_SIGNAL_DELAY_RANGE_MS = [800, 2500];
 const LOADING_DELAY_MS = 900;
 const SAVE_APPEAR_DELAY_RANGE_MS = [500, 1500];
 
+// 시뮬레이션 서버 시간: 로그인하는 순간이 10:29:50, 수강신청 정각은 10:30:00.
+const SIM_OPEN_SECONDS = 10 * 3600 + 30 * 60 + 0;
+let simSeconds = 10 * 3600 + 29 * 60 + 50;
+
 const state = {
   mode: null, // "mash" | "reaction"
   entryScore: null,
   saveScore: null,
+  entryRaw: null, // { type: "cps" | "ms", value: number }
+  saveRaw: null, // ms
 };
 
 function showScreen(id) {
@@ -32,15 +37,27 @@ function isTriggerKey(event) {
   return (event.code === "Space" || event.code === "Enter") && !event.repeat;
 }
 
+// 버튼을 눌린 것처럼 짧게 찌그러뜨리는 시각 피드백.
+// 연타 중에도 매 트리거마다 다시 재생되도록 클래스를 지웠다가 강제 리플로우 후 다시 붙인다.
+function pulseButton(button) {
+  button.classList.remove("pressed");
+  void button.offsetWidth;
+  button.classList.add("pressed");
+}
+
 // 클릭과 Space/Enter 키를 하나의 트리거로 묶어준다.
 // preventDefault()를 호출해 버튼에 포커스가 가 있을 때 Space/Enter가
 // 네이티브 click 이벤트를 한 번 더 만들어 중복 카운트되는 것을 막는다.
 function bindTrigger(button, onTrigger) {
-  const onClick = () => onTrigger();
+  const fire = () => {
+    pulseButton(button);
+    onTrigger();
+  };
+  const onClick = () => fire();
   const onKeydown = (event) => {
     if (!isTriggerKey(event)) return;
     event.preventDefault();
-    onTrigger();
+    fire();
   };
   button.addEventListener("click", onClick);
   document.addEventListener("keydown", onKeydown);
@@ -50,16 +67,46 @@ function bindTrigger(button, onTrigger) {
   };
 }
 
-function startServerClock() {
-  const clockEl = document.getElementById("server-clock");
-  const tick = () => {
-    clockEl.textContent = new Date().toLocaleTimeString("ko-KR", { hour12: false });
-  };
-  tick();
-  setInterval(tick, 1000);
+function formatSimClock(totalSeconds) {
+  const wrapped = ((totalSeconds % 86400) + 86400) % 86400;
+  const h = Math.floor(wrapped / 3600);
+  const m = Math.floor((wrapped % 3600) / 60);
+  const s = Math.floor(wrapped % 60);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
-startServerClock();
+function startSimClock() {
+  const loginClockEl = document.getElementById("server-clock");
+  const standbyClockEl = document.getElementById("standby-clock");
+  const countdownEl = document.getElementById("standby-countdown");
+  const bannerEl = document.getElementById("standby-message");
+
+  const render = () => {
+    const timeText = formatSimClock(simSeconds);
+    loginClockEl.textContent = timeText;
+    standbyClockEl.textContent = timeText;
+
+    const remaining = SIM_OPEN_SECONDS - simSeconds;
+    if (remaining > 0) {
+      countdownEl.textContent = String(remaining);
+      bannerEl.textContent = "지금은 수강신청 시간이 아닙니다. 시작시간을 확인하세요.";
+      bannerEl.classList.remove("standby-banner--open");
+    } else {
+      countdownEl.textContent = "OPEN";
+      bannerEl.textContent = "수강신청이 시작되었습니다! 지금 클릭하세요.";
+      bannerEl.classList.add("standby-banner--open");
+    }
+  };
+
+  render();
+  setInterval(() => {
+    simSeconds += 1;
+    render();
+  }, 1000);
+}
+
+startSimClock();
 
 document.getElementById("login-form").addEventListener("submit", (event) => {
   event.preventDefault();
@@ -79,19 +126,10 @@ document.getElementById("mode-reaction").addEventListener("click", () => {
 function startStandby() {
   showScreen("screen-standby");
   const enterBtn = document.getElementById("enter-btn");
-  const countdownEl = document.getElementById("standby-countdown");
 
-  // 카운트다운은 분위기용 연출일 뿐, 버튼은 화면이 뜨자마자 바로 클릭/Space/Enter로
-  // 반응한다 — 실제 수강신청처럼 "정각 전에는 눌러도 소용없음"을 강제하지 않는다.
-  let remaining = STANDBY_COUNTDOWN_SEC;
-  countdownEl.textContent = String(remaining);
-
-  const timer = setInterval(() => {
-    remaining -= 1;
-    countdownEl.textContent = remaining > 0 ? String(remaining) : "정각!";
-    if (remaining <= 0) clearInterval(timer);
-  }, 1000);
-
+  // 정각까지 남은 카운트다운은 startSimClock()이 매초 갱신하는 분위기용 연출일
+  // 뿐, 버튼은 화면이 뜨자마자 바로 클릭/Space/Enter로 반응한다 — 실제
+  // 수강신청처럼 "정각 전에는 눌러도 소용없음"을 강제하지 않는다.
   startEntryPhase(enterBtn);
 }
 
@@ -109,6 +147,7 @@ function startEntryPhase(enterBtn) {
       const elapsedSec = (performance.now() - phaseStart) / 1000;
       const cps = clicks / elapsedSec;
       state.entryScore = normalizeCps(cps);
+      state.entryRaw = { type: "cps", value: cps };
       startQueuePhase();
     }, MASH_DURATION_MS);
   } else {
@@ -130,6 +169,7 @@ function startEntryPhase(enterBtn) {
         unbind();
         const reactionMs = performance.now() - goAt;
         state.entryScore = normalizeReactionMs(reactionMs);
+        state.entryRaw = { type: "ms", value: reactionMs };
         startQueuePhase();
       });
     }, signalDelay);
@@ -163,6 +203,7 @@ function startSavePhase() {
       unbind();
       const reactionMs = performance.now() - appearAt;
       state.saveScore = normalizeReactionMs(reactionMs);
+      state.saveRaw = reactionMs;
       startLoadingPhase();
     });
   }, appearDelay);
@@ -199,10 +240,15 @@ function showResult() {
   document.getElementById("result-grade").textContent = grade.name;
   document.getElementById("result-desc").textContent = grade.desc;
 
+  const entryDetail =
+    state.entryRaw.type === "cps"
+      ? `${state.entryRaw.value.toFixed(1)} CPS`
+      : `${Math.round(state.entryRaw.value)}ms`;
+
   document.getElementById("bar-entry").style.width = `${Math.round(state.entryScore)}%`;
-  document.getElementById("stat-entry").textContent = `${Math.round(state.entryScore)}`;
+  document.getElementById("stat-entry").textContent = entryDetail;
   document.getElementById("bar-save").style.width = `${Math.round(state.saveScore)}%`;
-  document.getElementById("stat-save").textContent = `${Math.round(state.saveScore)}`;
+  document.getElementById("stat-save").textContent = `${Math.round(state.saveRaw)}ms`;
 
   const previousBest = loadBestScore(window.localStorage);
   saveBestScore(overallScore, window.localStorage);
@@ -245,6 +291,8 @@ function showResult() {
     state.mode = null;
     state.entryScore = null;
     state.saveScore = null;
+    state.entryRaw = null;
+    state.saveRaw = null;
     showScreen("screen-mode");
   };
 }

@@ -26,6 +26,8 @@ body {
   color: white;
   padding: 10px 20px;
   display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
   justify-content: space-between;
   align-items: center;
 }
@@ -87,6 +89,21 @@ button {
 button:disabled {
   background: #999;
   cursor: not-allowed;
+}
+
+button:active {
+  transform: scale(0.95);
+}
+
+/* 마우스 :active뿐 아니라 키보드(Space/Enter) 트리거에도 눌리는 느낌을 준다.
+   JS가 트리거마다 클래스를 뗐다 붙여서 연타 중에도 매번 다시 재생된다. */
+@keyframes button-press {
+  0% { transform: scale(0.88); }
+  100% { transform: scale(1); }
+}
+
+button.pressed {
+  animation: button-press 0.12s ease-out;
 }
 
 .panel-card {
@@ -183,6 +200,12 @@ button:disabled {
   border-radius: 6px;
   padding: 10px;
   font-size: 0.9rem;
+}
+
+.standby-banner.standby-banner--open {
+  background: #e9f9ec;
+  color: #1e7d32;
+  border-color: #b6e3bd;
 }
 
 .standby-sub { font-size: 0.8rem; color: #888; margin: 8px 0 0; }
@@ -421,7 +444,13 @@ button:disabled {
   transition: width 0.6s ease-out;
 }
 
-.result-stat-value { width: 36px; flex-shrink: 0; text-align: right; font-weight: bold; }
+.result-stat-value {
+  min-width: 64px;
+  flex-shrink: 0;
+  text-align: right;
+  font-weight: bold;
+  white-space: nowrap;
+}
 
 #result-best { font-size: 0.85rem; color: #888; }
 
