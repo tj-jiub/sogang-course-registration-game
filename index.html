@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>서강대 수강신청 클릭 연습</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <span class="disclaimer">⚠️ 비공식 연습용 게임 · 서강대학교 종합정보시스템과 무관</span>
+  </header>
+
+  <main id="app">
+    <section id="screen-login" class="screen active">
+      <h1>수강신청 로그인</h1>
+      <form id="login-form">
+        <input type="text" placeholder="학번 (예: 20250000)" required />
+        <input type="password" placeholder="비밀번호" required />
+        <button type="submit" id="login-submit">LOGIN</button>
+      </form>
+    </section>
+
+    <section id="screen-mode" class="screen">
+      <h2>연습 모드를 선택하세요</h2>
+      <button id="mode-mash">연타 모드</button>
+      <button id="mode-reaction">반응속도 모드</button>
+    </section>
+
+    <section id="screen-standby" class="screen">
+      <p id="standby-message">지금은 수강신청 시간이 아닙니다.</p>
+      <p id="standby-countdown">7</p>
+      <button id="enter-btn" disabled>수강신청 들어가기</button>
+    </section>
+
+    <section id="screen-queue" class="screen">
+      <div class="queue-card">
+        <p class="queue-card-title">수강신청 접속 대기 안내</p>
+        <p>내 앞의 대기자 수:</p>
+        <p id="queue-count">0</p>
+      </div>
+    </section>
+
+    <section id="screen-courselist" class="screen">
+      <p>초급스페인어 검색 중...</p>
+    </section>
+
+    <section id="screen-save" class="screen">
+      <button id="save-btn">저장</button>
+    </section>
+
+    <section id="screen-loading" class="screen">
+      <div class="spinner"></div>
+    </section>
+
+    <section id="screen-toast" class="screen">
+      <p id="toast-message">수강신청 되었습니다.</p>
+    </section>
+
+    <section id="screen-result" class="screen">
+      <h2 id="result-grade"></h2>
+      <p id="result-desc"></p>
+      <p id="result-best"></p>
+      <canvas id="result-canvas" width="600" height="800"></canvas>
+      <button id="result-download">이미지 저장</button>
+      <button id="result-share">공유하기</button>
+    </section>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
