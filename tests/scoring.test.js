@@ -35,5 +35,5 @@ test("gradeForScore returns the highest grade whose min <= score", () => {
   assert.equal(gradeForScore(80).name, "수강신청 고인물");
   assert.equal(gradeForScore(60).name, "평범한 새내기");
   assert.equal(gradeForScore(40).name, "장바구니만 채운 자");
-  assert.equal(gradeForScore(10).name, "폐강 위기 각성 필요");
+  assert.equal(gradeForScore(10).name, "연습 좀 더 해라");
 });

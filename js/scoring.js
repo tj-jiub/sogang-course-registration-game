@@ -26,7 +26,7 @@ export const GRADES = [
   { min: 78, name: "수강신청 고인물", desc: "웬만한 과목은 다 잡는다." },
   { min: 58, name: "평범한 새내기", desc: "운이 나쁘면 담당자에게 메일 쓸 각오." },
   { min: 38, name: "장바구니만 채운 자", desc: "마음만 앞섰다." },
-  { min: 0, name: "폐강 위기 각성 필요", desc: "내년엔 알람을 3개 맞추자." },
+  { min: 0, name: "연습 좀 더 해라", desc: "이대로면 인기과목은 못 잡는다. 알람부터 3개 맞춰라." },
 ];
 
 export function gradeForScore(score) {
