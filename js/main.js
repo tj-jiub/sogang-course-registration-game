@@ -17,12 +17,17 @@ const SAVE_APPEAR_DELAY_RANGE_MS = [500, 1500];
 
 const REACTION_SIGNAL_DELAY_RANGE_MS = [500, 1800];
 
-// 시뮬레이션 서버 시간: 로그인하는 순간이 10:29:50, 수강신청 정각은 10:30:00.
-// 이건 순전히 분위기용 시계다 — 입장 버튼은 이 시계와 무관하게 화면이 뜨자마자
-// 바로 클릭/Space/Enter를 받는다 (정각 전이라고 막지 않는다). 그래서 배너
-// 문구도 "아직 안 됨"처럼 막는 느낌이 아니라 정보 안내 톤으로만 적는다.
+// 시뮬레이션 서버 시간: 대기 화면에 들어서는 순간이 10:29:50, 수강신청
+// 정각은 10:30:00. 이건 순전히 분위기용 시계이고, 매 라운드(재도전 포함)
+// 대기 화면에 들어갈 때마다 10:29:50부터 새로 시작한다 — 페이지 로드 시점
+// 부터 계속 흐르게 하면 로그인/모드선택에 걸린 시간만큼 이미 정각을
+// 지나버려서 카운트다운이 뜰 새도 없이 항상 "OPEN"으로 보이는 문제가 있었다.
+// 입장 버튼은 이 시계와 무관하게 화면이 뜨자마자 바로 클릭/Space/Enter를
+// 받는다(정각 전이라고 막지 않는다) — 그래서 배너 문구도 "아직 안 됨"처럼
+// 막는 느낌이 아니라 정보 안내 톤으로만 적는다.
+const SIM_START_SECONDS = 10 * 3600 + 29 * 60 + 50;
 const SIM_OPEN_SECONDS = 10 * 3600 + 30 * 60 + 0;
-let simSeconds = 10 * 3600 + 29 * 60 + 50;
+let standbyClockTimer = null;
 
 const state = {
   mode: null, // "mash" | "reaction"
@@ -88,18 +93,21 @@ function formatSimClock(totalSeconds) {
   return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
-function startSimClock() {
-  const loginClockEl = document.getElementById("server-clock");
+// 대기 화면에 들어갈 때마다 호출 — 이전 라운드에서 돌던 타이머가 있으면
+// 정리하고 10:29:50부터 새로 카운트다운을 시작한다.
+function startStandbyClock() {
+  if (standbyClockTimer !== null) clearInterval(standbyClockTimer);
+
   const standbyClockEl = document.getElementById("standby-clock");
   const countdownEl = document.getElementById("standby-countdown");
   const bannerEl = document.getElementById("standby-message");
 
-  const render = () => {
-    const timeText = formatSimClock(simSeconds);
-    loginClockEl.textContent = timeText;
-    standbyClockEl.textContent = timeText;
+  let roundSeconds = SIM_START_SECONDS;
 
-    const remaining = SIM_OPEN_SECONDS - simSeconds;
+  const render = () => {
+    standbyClockEl.textContent = formatSimClock(roundSeconds);
+
+    const remaining = SIM_OPEN_SECONDS - roundSeconds;
     if (remaining > 0) {
       countdownEl.textContent = String(remaining);
       bannerEl.textContent = "수강신청 시작 예정 시각: 10:30:00";
@@ -112,13 +120,13 @@ function startSimClock() {
   };
 
   render();
-  setInterval(() => {
-    simSeconds += 1;
+  standbyClockTimer = setInterval(() => {
+    roundSeconds += 1;
     render();
   }, 1000);
 }
 
-startSimClock();
+document.getElementById("server-clock").textContent = formatSimClock(SIM_START_SECONDS);
 
 document.getElementById("login-form").addEventListener("submit", (event) => {
   event.preventDefault();
@@ -137,6 +145,7 @@ document.getElementById("mode-reaction").addEventListener("click", () => {
 
 function startStandby() {
   showScreen("screen-standby");
+  startStandbyClock();
   const enterBtn = document.getElementById("enter-btn");
   startEntryPhase(enterBtn);
 }
