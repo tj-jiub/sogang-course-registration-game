@@ -239,6 +239,18 @@ button.pressed {
   font-weight: bold;
 }
 
+/* 정각 전 클릭에 대한 "아직이에요!" 피드백 — 조용히 무시되는 것처럼
+   보이지 않도록 매번 눈에 띄게 깜빡인다. */
+@keyframes hint-flash {
+  0% { transform: scale(1); color: #c0392b; }
+  50% { transform: scale(1.08); color: #c0392b; }
+  100% { transform: scale(1); color: var(--maroon-dark); }
+}
+
+.entry-hint.flash {
+  animation: hint-flash 0.35s ease-out;
+}
+
 /* Queue */
 
 .queue-card {

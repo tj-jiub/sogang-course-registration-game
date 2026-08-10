@@ -151,23 +151,32 @@ function startStandby() {
   startEntryPhase(enterBtn, round);
 }
 
+// 힌트 문구를 바꾸면서 짧게 깜빡이는 애니메이션을 재생한다. 정각 전 클릭이
+// "눌러도 조용히 아무 일도 안 일어나는" 것처럼 보였던 게 실제로는 지연이
+// 아니라 무효 클릭에 대한 피드백이 아예 없었던 게 원인이었다 — 매번 이걸
+// 호출해서 "아직 안 됐다"는 걸 눈에 보이게 알려준다.
+function flashHint(hintEl, text) {
+  hintEl.textContent = text;
+  hintEl.classList.remove("flash");
+  void hintEl.offsetWidth;
+  hintEl.classList.add("flash");
+}
+
 function startEntryPhase(enterBtn, round) {
   const hintEl = document.getElementById("entry-hint");
+  hintEl.textContent = "정각이 되면 시작됩니다.";
 
+  // 두 모드 모두 규칙이 동일하다: 정각(10:30:00) 전 클릭/Space/Enter는
+  // 버튼이 눌리는 모션 + "아직이에요!" 힌트 깜빡임만 재생될 뿐 실제로는
+  // 아무것도 세지 않는다. 판정은 클릭이 들어오는 바로 그 순간
+  // performance.now()를 round.openAt과 비교해서 정하고, 이를 위해 미리
+  // 예약해두는 타이머가 없다 — 그래서 타이머가 밀려서 판정이 늦어지는
+  // 일이 구조적으로 불가능하다.
   if (state.mode === "mash") {
-    // 정각(10:30:00) 전에는 클릭/Space/Enter를 눌러도 버튼이 눌리는
-    // 모션만 재생될 뿐 실제로는 아무것도 세지 않는다 — "정각 전 = 무효,
-    // 정각 이후 = 유효" 그 경계선만 본다. 예전엔 이 경계를 별도의
-    // setTimeout(msUntilOpen)으로 미리 예약해뒀는데, 그 타이머 자체가
-    // 밀리면(다른 타이머/렌더링에 치이면) 정각이 지나고도 한참 뒤에야
-    // 열리는 문제가 있었다. 이제는 예약을 아예 하지 않고, 클릭이 들어올
-    // 때마다 그 순간(performance.now())을 openAt과 즉석에서 비교한다 —
-    // 판정에 타이머 지연이 낄 여지가 구조적으로 없다.
-    hintEl.textContent = "정각이 되면 시작됩니다.";
     let clicks = 0;
     let windowStart = null;
     let settled = false;
-    let hintUpdatedForOpen = false;
+    let openedHintShown = false;
 
     // 3초 타이머는 정각 시점이 아니라 "첫 유효 클릭" 시점부터 시작한다.
     // 그래야 정각이 지났는데 누르지 않았다고 시간이 다 되어 저절로
@@ -176,10 +185,14 @@ function startEntryPhase(enterBtn, round) {
       if (settled) return;
 
       const now = performance.now();
-      if (!isOpen(now, round.openAt)) return; // 정각 전 클릭은 모션만, 무효
+      if (!isOpen(now, round.openAt)) {
+        flashHint(hintEl, "아직이에요! 정각을 기다려주세요.");
+        return;
+      }
 
-      if (!hintUpdatedForOpen) {
-        hintUpdatedForOpen = true;
+      if (!openedHintShown) {
+        openedHintShown = true;
+        hintEl.classList.remove("flash");
         hintEl.textContent = "지금 클릭 또는 Space/Enter로 연타하세요!";
       }
 
@@ -199,15 +212,15 @@ function startEntryPhase(enterBtn, round) {
       }
     });
   } else {
-    // 실제 수강신청처럼, 네트워크 지연을 감안해 정각보다 살짝 일찍 눌러도
-    // 손해가 아니다 — 클릭을 아무 때나 받아주고(disabled 아님), 점수는
-    // 클릭 시각과 정각 목표 시각(round.openAt)의 "차이"로 정한다. 정확히
-    // 딱 맞출수록 좋고, 너무 일찍이든 너무 늦든 똑같이 나빠진다.
-    hintEl.textContent = "정각(10:30:00)에 최대한 딱 맞춰 클릭하세요!";
-
     const unbind = bindTrigger(enterBtn, () => {
+      const now = performance.now();
+      if (!isOpen(now, round.openAt)) {
+        flashHint(hintEl, "아직이에요! 정각을 기다려주세요.");
+        return;
+      }
+
       unbind();
-      const reactionMs = Math.abs(performance.now() - round.openAt);
+      const reactionMs = now - round.openAt; // 정각 이후에만 유효하므로 항상 0 이상
       state.entryScore = normalizeReactionMs(reactionMs);
       state.entryRaw = { type: "ms", value: reactionMs };
       startQueuePhase();
