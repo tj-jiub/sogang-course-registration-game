@@ -104,6 +104,10 @@ function startStandbyClock() {
   const roundStartMs = performance.now();
   const openAt = computeOpenAt(roundStartMs, SIM_START_SECONDS, SIM_OPEN_SECONDS);
 
+  // 정각이 지나도 루프를 멈추지 않는다 — "서버 시간"은 계속 흘러야 자연
+  // 스럽다. 예전엔 정각 순간 루프를 끊어서 시계가 "OPEN"에서 멈춘 것처럼
+  // 보였는데, 그게 마치 화면이 멎어버린 것 같은 인상을 줘서 지연처럼
+  // 느껴졌다. 다른 화면으로 넘어갈 때는 stopStandbyClock()으로 정리한다.
   const render = () => {
     const now = performance.now();
     const simSeconds = SIM_START_SECONDS + (now - roundStartMs) / 1000;
@@ -113,18 +117,25 @@ function startStandbyClock() {
       countdownEl.textContent = formatRemaining(now, openAt);
       bannerEl.textContent = "수강신청 시작 예정 시각: 10:30:00";
       bannerEl.classList.remove("standby-banner--open");
-      standbyClockFrame = requestAnimationFrame(render);
-    } else {
+    } else if (!bannerEl.classList.contains("standby-banner--open")) {
       countdownEl.textContent = "OPEN";
       bannerEl.textContent = "수강신청이 시작되었습니다!";
       bannerEl.classList.add("standby-banner--open");
-      standbyClockFrame = null; // 정각 이후에는 더 갱신할 게 없으니 루프 종료
     }
+
+    standbyClockFrame = requestAnimationFrame(render);
   };
 
   render();
 
   return { openAt };
+}
+
+function stopStandbyClock() {
+  if (standbyClockFrame !== null) {
+    cancelAnimationFrame(standbyClockFrame);
+    standbyClockFrame = null;
+  }
 }
 
 document.getElementById("server-clock").textContent = formatClock(SIM_START_SECONDS);
@@ -165,6 +176,7 @@ function flashHint(hintEl, text) {
 function startEntryPhase(enterBtn, round) {
   const hintEl = document.getElementById("entry-hint");
   hintEl.textContent = "정각이 되면 시작됩니다.";
+  document.getElementById("entry-spinner").hidden = true;
 
   // 두 모드 모두 규칙이 동일하다: 정각(10:30:00) 전 클릭/Space/Enter는
   // 버튼이 눌리는 모션 + "아직이에요!" 힌트 깜빡임만 재생될 뿐 실제로는
@@ -173,6 +185,7 @@ function startEntryPhase(enterBtn, round) {
   // 예약해두는 타이머가 없다 — 그래서 타이머가 밀려서 판정이 늦어지는
   // 일이 구조적으로 불가능하다.
   if (state.mode === "mash") {
+    const spinnerEl = document.getElementById("entry-spinner");
     let clicks = 0;
     let windowStart = null;
     let settled = false;
@@ -199,9 +212,11 @@ function startEntryPhase(enterBtn, round) {
       clicks += 1;
       if (windowStart === null) {
         windowStart = now;
+        spinnerEl.hidden = false; // 3초간 실제로 세고 있다는 걸 눈에 보여준다
         setTimeout(() => {
           if (settled) return;
           settled = true;
+          spinnerEl.hidden = true;
           unbind();
           const elapsedSec = (performance.now() - windowStart) / 1000;
           const cps = clicks / elapsedSec;
@@ -229,6 +244,7 @@ function startEntryPhase(enterBtn, round) {
 }
 
 async function startQueuePhase() {
+  stopStandbyClock();
   showScreen("screen-queue");
   const queueCountEl = document.getElementById("queue-count");
   const steps = buildQueueSteps(state.entryScore);

@@ -357,6 +357,22 @@ button.pressed {
   to { transform: rotate(360deg); }
 }
 
+/* 연타 모드가 실제로 카운트를 세는 중이라는 걸 눈에 보여준다 —
+   가만히 있으면 멈춘 것처럼 느껴질 수 있어서. */
+.mini-spinner {
+  width: 22px;
+  height: 22px;
+  margin: 10px auto 0;
+  border: 3px solid #eee;
+  border-top-color: var(--maroon);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+.mini-spinner[hidden] {
+  display: none;
+}
+
 /* Toast */
 
 .toast-card {
