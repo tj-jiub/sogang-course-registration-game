@@ -10,6 +10,7 @@ import {
 import { buildQueueSteps } from "./queueSim.js";
 import { loadBestScore, saveBestScore } from "./storage.js";
 import { drawResultCard } from "./resultCard.js";
+import { computeOpenAt, isOpen, formatClock, formatRemaining } from "./roundClock.js";
 
 const MASH_DURATION_MS = 3000;
 const LOADING_DELAY_MS = 900;
@@ -20,13 +21,14 @@ const SAVE_APPEAR_DELAY_RANGE_MS = [500, 1500];
 // 10:29:50부터 새로 시작한다 — 페이지 로드 시점부터 계속 흐르게 하면
 // 로그인/모드선택에 걸린 시간만큼 이미 정각을 지나버려서 카운트다운이
 // 뜰 새도 없이 항상 "OPEN"으로 보이는 문제가 있었다.
-// 반응속도 모드는 실제 수강신청처럼 "네트워크 지연을 감안해 정각보다
-// 살짝 일찍 누른다" 전략이 통해야 한다 — 정각 딱 그 순간에만 클릭이
-// 유효하고 그 전엔 씹히는 게 아니라, 클릭 시각과 정각 목표 시각의 "차이"가
-// 작을수록(일찍이든 늦게든) 좋은 점수를 받는다.
+//
+// openAt(목표 시각) 하나만 진실 공급원으로 두고, 클릭이 유효한지는 그
+// 클릭이 들어온 순간 openAt과 직접 비교해서 판정한다(roundClock.isOpen).
+// 화면 갱신용 requestAnimationFrame 루프는 순수하게 "보여주기"만 담당—
+// 이 루프가 언제 도는지는 판정 결과에 전혀 영향을 주지 않는다.
 const SIM_START_SECONDS = 10 * 3600 + 29 * 60 + 50;
 const SIM_OPEN_SECONDS = 10 * 3600 + 30 * 60 + 0;
-let standbyClockTimer = null;
+let standbyClockFrame = null;
 
 const state = {
   mode: null, // "mash" | "reaction"
@@ -83,54 +85,49 @@ function bindTrigger(button, onTrigger) {
   };
 }
 
-function formatSimClock(totalSeconds) {
-  const wrapped = ((totalSeconds % 86400) + 86400) % 86400;
-  const h = Math.floor(wrapped / 3600);
-  const m = Math.floor((wrapped % 3600) / 60);
-  const s = Math.floor(wrapped % 60);
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${pad(h)}:${pad(m)}:${pad(s)}`;
-}
-
-// 대기 화면에 들어갈 때마다 호출 — 이전 라운드에서 돌던 타이머가 있으면
-// 정리하고 10:29:50부터 새로 카운트다운을 시작한다. 정각(10:30:00)의
-// 실제 performance.now() 기준 목표 시각(openAt)도 함께 계산해 돌려준다 —
-// 반응속도 모드가 "클릭 시각이 이 목표 시각과 얼마나 가까운가"를 재는 데 쓴다.
+// 대기 화면에 들어갈 때마다 호출 — 이전 라운드에서 돌던 프레임 루프가 있으면
+// 정리하고 10:29:50부터 새로 카운트다운을 시작한다. 정각(10:30:00)의 실제
+// performance.now() 기준 목표 시각(openAt)이 유일한 진실 공급원이다.
+//
+// 여기서 도는 requestAnimationFrame 루프는 순전히 화면 표시용이다 — 초당
+// 수십 번(탭이 보이는 동안 보통 60Hz) 갱신되어 데시초 단위로 정각까지
+// 남은 시간을 보여준다. 클릭 판정에는 이 루프의 결과를 전혀 쓰지 않는다
+// (startEntryPhase가 클릭 순간 openAt과 직접 비교한다) — 그래서 이 루프가
+// 약간 밀리거나 몇 프레임 스킵되어도 실제 판정 정확도에는 영향이 없다.
 function startStandbyClock() {
-  if (standbyClockTimer !== null) clearInterval(standbyClockTimer);
+  if (standbyClockFrame !== null) cancelAnimationFrame(standbyClockFrame);
 
   const standbyClockEl = document.getElementById("standby-clock");
   const countdownEl = document.getElementById("standby-countdown");
   const bannerEl = document.getElementById("standby-message");
 
-  let roundSeconds = SIM_START_SECONDS;
-  const openAt = performance.now() + (SIM_OPEN_SECONDS - SIM_START_SECONDS) * 1000;
+  const roundStartMs = performance.now();
+  const openAt = computeOpenAt(roundStartMs, SIM_START_SECONDS, SIM_OPEN_SECONDS);
 
   const render = () => {
-    standbyClockEl.textContent = formatSimClock(roundSeconds);
+    const now = performance.now();
+    const simSeconds = SIM_START_SECONDS + (now - roundStartMs) / 1000;
+    standbyClockEl.textContent = formatClock(simSeconds);
 
-    const remaining = SIM_OPEN_SECONDS - roundSeconds;
-    if (remaining > 0) {
-      countdownEl.textContent = String(remaining);
+    if (!isOpen(now, openAt)) {
+      countdownEl.textContent = formatRemaining(now, openAt);
       bannerEl.textContent = "수강신청 시작 예정 시각: 10:30:00";
       bannerEl.classList.remove("standby-banner--open");
+      standbyClockFrame = requestAnimationFrame(render);
     } else {
       countdownEl.textContent = "OPEN";
       bannerEl.textContent = "수강신청이 시작되었습니다!";
       bannerEl.classList.add("standby-banner--open");
+      standbyClockFrame = null; // 정각 이후에는 더 갱신할 게 없으니 루프 종료
     }
   };
 
   render();
-  standbyClockTimer = setInterval(() => {
-    roundSeconds += 1;
-    render();
-  }, 1000);
 
   return { openAt };
 }
 
-document.getElementById("server-clock").textContent = formatSimClock(SIM_START_SECONDS);
+document.getElementById("server-clock").textContent = formatClock(SIM_START_SECONDS);
 
 document.getElementById("login-form").addEventListener("submit", (event) => {
   event.preventDefault();
@@ -159,40 +156,48 @@ function startEntryPhase(enterBtn, round) {
 
   if (state.mode === "mash") {
     // 정각(10:30:00) 전에는 클릭/Space/Enter를 눌러도 버튼이 눌리는
-    // 모션만 재생될 뿐 실제로는 아무것도 세지 않는다 — 거리/딜레이 계산
-    // 없이 "정각 전 = 무효, 정각 이후 = 유효" 딱 그 경계선 하나만 본다.
+    // 모션만 재생될 뿐 실제로는 아무것도 세지 않는다 — "정각 전 = 무효,
+    // 정각 이후 = 유효" 그 경계선만 본다. 예전엔 이 경계를 별도의
+    // setTimeout(msUntilOpen)으로 미리 예약해뒀는데, 그 타이머 자체가
+    // 밀리면(다른 타이머/렌더링에 치이면) 정각이 지나고도 한참 뒤에야
+    // 열리는 문제가 있었다. 이제는 예약을 아예 하지 않고, 클릭이 들어올
+    // 때마다 그 순간(performance.now())을 openAt과 즉석에서 비교한다 —
+    // 판정에 타이머 지연이 낄 여지가 구조적으로 없다.
     hintEl.textContent = "정각이 되면 시작됩니다.";
-    const earlyUnbind = bindTrigger(enterBtn, () => {});
+    let clicks = 0;
+    let windowStart = null;
+    let settled = false;
+    let hintUpdatedForOpen = false;
 
-    const msUntilOpen = Math.max(0, round.openAt - performance.now());
-    setTimeout(() => {
-      earlyUnbind();
-      hintEl.textContent = "지금 클릭 또는 Space/Enter로 연타하세요!";
-      let clicks = 0;
-      let windowStart = null;
-      let settled = false;
+    // 3초 타이머는 정각 시점이 아니라 "첫 유효 클릭" 시점부터 시작한다.
+    // 그래야 정각이 지났는데 누르지 않았다고 시간이 다 되어 저절로
+    // 다음 화면으로 넘어가는 일이 없다 — 최소 한 번은 눌러야 진행된다.
+    const unbind = bindTrigger(enterBtn, () => {
+      if (settled) return;
 
-      // 3초 타이머는 정각 시점이 아니라 "첫 클릭" 시점부터 시작한다.
-      // 그래야 정각이 지났는데 누르지 않았다고 시간이 다 되어 저절로
-      // 다음 화면으로 넘어가는 일이 없다 — 최소 한 번은 눌러야 진행된다.
-      const unbind = bindTrigger(enterBtn, () => {
-        if (settled) return;
-        clicks += 1;
-        if (windowStart === null) {
-          windowStart = performance.now();
-          setTimeout(() => {
-            if (settled) return;
-            settled = true;
-            unbind();
-            const elapsedSec = (performance.now() - windowStart) / 1000;
-            const cps = clicks / elapsedSec;
-            state.entryScore = normalizeCps(cps);
-            state.entryRaw = { type: "cps", value: cps };
-            startQueuePhase();
-          }, MASH_DURATION_MS);
-        }
-      });
-    }, msUntilOpen);
+      const now = performance.now();
+      if (!isOpen(now, round.openAt)) return; // 정각 전 클릭은 모션만, 무효
+
+      if (!hintUpdatedForOpen) {
+        hintUpdatedForOpen = true;
+        hintEl.textContent = "지금 클릭 또는 Space/Enter로 연타하세요!";
+      }
+
+      clicks += 1;
+      if (windowStart === null) {
+        windowStart = now;
+        setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          unbind();
+          const elapsedSec = (performance.now() - windowStart) / 1000;
+          const cps = clicks / elapsedSec;
+          state.entryScore = normalizeCps(cps);
+          state.entryRaw = { type: "cps", value: cps };
+          startQueuePhase();
+        }, MASH_DURATION_MS);
+      }
+    });
   } else {
     // 실제 수강신청처럼, 네트워크 지연을 감안해 정각보다 살짝 일찍 눌러도
     // 손해가 아니다 — 클릭을 아무 때나 받아주고(disabled 아님), 점수는
