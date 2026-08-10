@@ -158,31 +158,41 @@ function startEntryPhase(enterBtn, round) {
   const hintEl = document.getElementById("entry-hint");
 
   if (state.mode === "mash") {
-    hintEl.textContent = "지금 바로 클릭 또는 Space/Enter로 연타하세요!";
-    let clicks = 0;
-    let windowStart = null;
-    let settled = false;
+    // 정각(10:30:00) 전에는 클릭/Space/Enter를 눌러도 버튼이 눌리는
+    // 모션만 재생될 뿐 실제로는 아무것도 세지 않는다 — 거리/딜레이 계산
+    // 없이 "정각 전 = 무효, 정각 이후 = 유효" 딱 그 경계선 하나만 본다.
+    hintEl.textContent = "정각이 되면 시작됩니다.";
+    const earlyUnbind = bindTrigger(enterBtn, () => {});
 
-    // 3초 타이머는 화면이 뜬 시점이 아니라 "첫 클릭" 시점부터 시작한다.
-    // 그래야 아무것도 누르지 않았는데 시간이 다 되어 저절로 다음 화면으로
-    // 넘어가는 일이 없다 — 최소 한 번은 눌러야 라운드가 진행된다.
-    const unbind = bindTrigger(enterBtn, () => {
-      if (settled) return;
-      clicks += 1;
-      if (windowStart === null) {
-        windowStart = performance.now();
-        setTimeout(() => {
-          if (settled) return;
-          settled = true;
-          unbind();
-          const elapsedSec = (performance.now() - windowStart) / 1000;
-          const cps = clicks / elapsedSec;
-          state.entryScore = normalizeCps(cps);
-          state.entryRaw = { type: "cps", value: cps };
-          startQueuePhase();
-        }, MASH_DURATION_MS);
-      }
-    });
+    const msUntilOpen = Math.max(0, round.openAt - performance.now());
+    setTimeout(() => {
+      earlyUnbind();
+      hintEl.textContent = "지금 클릭 또는 Space/Enter로 연타하세요!";
+      let clicks = 0;
+      let windowStart = null;
+      let settled = false;
+
+      // 3초 타이머는 정각 시점이 아니라 "첫 클릭" 시점부터 시작한다.
+      // 그래야 정각이 지났는데 누르지 않았다고 시간이 다 되어 저절로
+      // 다음 화면으로 넘어가는 일이 없다 — 최소 한 번은 눌러야 진행된다.
+      const unbind = bindTrigger(enterBtn, () => {
+        if (settled) return;
+        clicks += 1;
+        if (windowStart === null) {
+          windowStart = performance.now();
+          setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            unbind();
+            const elapsedSec = (performance.now() - windowStart) / 1000;
+            const cps = clicks / elapsedSec;
+            state.entryScore = normalizeCps(cps);
+            state.entryRaw = { type: "cps", value: cps };
+            startQueuePhase();
+          }, MASH_DURATION_MS);
+        }
+      });
+    }, msUntilOpen);
   } else {
     // 실제 수강신청처럼, 네트워크 지연을 감안해 정각보다 살짝 일찍 눌러도
     // 손해가 아니다 — 클릭을 아무 때나 받아주고(disabled 아님), 점수는
