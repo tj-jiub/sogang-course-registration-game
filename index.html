@@ -4,7 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>서강대 수강신청 클릭 연습</title>
+  <meta name="color-scheme" content="light dark" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="style.css" />
+  <script>
+    // FOUC 방지: 저장된 테마 선택을 CSS/JS가 로드되기 전에 즉시 적용한다.
+    (function () {
+      var saved = localStorage.getItem("sogang-course-registration-game:theme");
+      if (saved === "light" || saved === "dark") {
+        document.documentElement.setAttribute("data-theme", saved);
+      }
+    })();
+  </script>
 </head>
 <body>
   <header class="site-header">
@@ -12,6 +26,7 @@
       <span class="brand-kr">서강대학교</span>
       <span class="brand-en">SOGANG UNIVERSITY</span>
     </div>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="다크모드 전환">🌙</button>
     <div class="brand-service">
       <span class="service-kr">수강신청</span>
       <span class="service-en">Course Registration</span>

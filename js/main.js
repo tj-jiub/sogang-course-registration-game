@@ -15,6 +15,39 @@ import { computeOpenAt, isOpen, formatClock, formatRemaining } from "./roundCloc
 const MASH_DURATION_MS = 3000;
 const LOADING_DELAY_MS = 900;
 const SAVE_APPEAR_DELAY_RANGE_MS = [500, 1500];
+const THEME_STORAGE_KEY = "sogang-course-registration-game:theme";
+
+// index.html의 인라인 스크립트가 FOUC 방지를 위해 data-theme을 이미 적용해둔
+// 상태에서 시작한다. 여기서는 버튼 아이콘 동기화와 토글 동작만 담당한다.
+function initThemeToggle() {
+  const toggleBtn = document.getElementById("theme-toggle");
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
+
+  const effectiveTheme = () => {
+    const forced = document.documentElement.getAttribute("data-theme");
+    if (forced === "light" || forced === "dark") return forced;
+    return prefersDark.matches ? "dark" : "light";
+  };
+
+  const syncIcon = () => {
+    toggleBtn.textContent = effectiveTheme() === "dark" ? "☀️" : "🌙";
+  };
+
+  toggleBtn.addEventListener("click", () => {
+    const next = effectiveTheme() === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem(THEME_STORAGE_KEY, next);
+    syncIcon();
+  });
+
+  prefersDark.addEventListener("change", () => {
+    if (!document.documentElement.getAttribute("data-theme")) syncIcon();
+  });
+
+  syncIcon();
+}
+
+initThemeToggle();
 
 // 시뮬레이션 서버 시간: 대기 화면에 들어서는 순간이 10:29:50, 수강신청
 // 정각은 10:30:00. 매 라운드(재도전 포함) 대기 화면에 들어갈 때마다
