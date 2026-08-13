@@ -356,9 +356,17 @@ function showResult() {
       ? `${state.entryRaw.value.toFixed(1)} CPS`
       : `${Math.round(state.entryRaw.value)}ms`;
 
-  document.getElementById("bar-entry").style.width = `${Math.round(state.entryScore)}%`;
+  const entryGrade = gradeForRank(entryRank);
+  const saveGrade = gradeForRank(saveRank);
+
+  const entryChip = document.getElementById("chip-entry");
+  entryChip.textContent = entryRank;
+  entryChip.style.setProperty("--chip-color", entryGrade.color);
   document.getElementById("stat-entry").textContent = entryDetail;
-  document.getElementById("bar-save").style.width = `${Math.round(state.saveScore)}%`;
+
+  const saveChip = document.getElementById("chip-save");
+  saveChip.textContent = saveRank;
+  saveChip.style.setProperty("--chip-color", saveGrade.color);
   document.getElementById("stat-save").textContent = `${Math.round(state.saveRaw)}ms`;
 
   const previousBest = loadBestScore(window.localStorage);

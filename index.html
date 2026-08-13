@@ -26,10 +26,12 @@
       <span class="brand-kr">서강대학교</span>
       <span class="brand-en">SOGANG UNIVERSITY</span>
     </div>
-    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="다크모드 전환">🌙</button>
-    <div class="brand-service">
-      <span class="service-kr">수강신청</span>
-      <span class="service-en">Course Registration</span>
+    <div class="header-right">
+      <div class="brand-service">
+        <span class="service-kr">수강신청</span>
+        <span class="service-en">Course Registration</span>
+      </div>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="다크모드 전환">🌙</button>
     </div>
   </header>
   <p class="disclaimer">⚠️ 비공식 연습용 게임 · 서강대학교 종합정보시스템과 무관</p>
@@ -52,15 +54,15 @@
       </div>
     </section>
 
-    <section id="screen-mode" class="screen">
-      <div class="panel-card">
-        <h2>연습 모드를 선택하세요</h2>
-        <button id="mode-mash" class="mode-btn">
-          연타 모드
+    <section id="screen-mode" class="screen screen-mode-select">
+      <p class="mode-select-title">연습 모드를 선택하세요</p>
+      <div class="mode-split">
+        <button id="mode-mash" class="mode-half">
+          <span class="mode-half-label">연타</span>
           <small>클릭 또는 Space / Enter 연타</small>
         </button>
-        <button id="mode-reaction" class="mode-btn">
-          반응속도 모드
+        <button id="mode-reaction" class="mode-half">
+          <span class="mode-half-label">반응속도</span>
           <small>신호가 뜨면 한 번만 클릭</small>
         </button>
       </div>
@@ -143,21 +145,28 @@
         <h2 id="result-grade"></h2>
         <p id="result-desc"></p>
 
-        <div class="result-stats">
-          <div class="result-stat-row">
-            <span class="result-stat-label">입장 속도</span>
-            <div class="result-bar"><div id="bar-entry" class="result-bar-fill"></div></div>
-            <span id="stat-entry" class="result-stat-value"></span>
-          </div>
-          <div class="result-stat-row">
-            <span class="result-stat-label">저장 반응</span>
-            <div class="result-bar"><div id="bar-save" class="result-bar-fill"></div></div>
-            <span id="stat-save" class="result-stat-value"></span>
-          </div>
-        </div>
+        <table class="grade-table">
+          <tbody>
+            <tr>
+              <th scope="row">입장</th>
+              <td><span id="chip-entry" class="grade-chip"></span></td>
+              <td id="stat-entry" class="grade-table-value"></td>
+            </tr>
+            <tr>
+              <th scope="row">저장</th>
+              <td><span id="chip-save" class="grade-chip"></span></td>
+              <td id="stat-save" class="grade-table-value"></td>
+            </tr>
+          </tbody>
+        </table>
 
         <p id="result-best"></p>
-        <canvas id="result-canvas" width="600" height="800"></canvas>
+
+        <details class="result-preview">
+          <summary>결과 카드 이미지 미리보기</summary>
+          <canvas id="result-canvas" width="600" height="800"></canvas>
+        </details>
+
         <div class="result-actions">
           <button id="result-download">이미지 저장</button>
           <button id="result-share">공유하기</button>
