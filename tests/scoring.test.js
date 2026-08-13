@@ -57,8 +57,10 @@ test("combineRanks takes the worse of the two ranks", () => {
   assert.equal(combineRanks("B", "B"), "B");
 });
 
-test("gradeForRank attaches name/desc/emoji/color to a rank letter", () => {
+test("gradeForRank attaches name/descs/emoji/color to a rank letter", () => {
   assert.equal(gradeForRank("S").name, "사이버럭카");
   assert.equal(gradeForRank("D").name, "연습 좀 더 해라");
   assert.equal(gradeForRank("A").rank, "A");
+  assert.ok(Array.isArray(gradeForRank("S").descs));
+  assert.ok(gradeForRank("S").descs.length > 1);
 });

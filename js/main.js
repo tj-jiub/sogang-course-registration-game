@@ -335,7 +335,11 @@ function showResult() {
       ? rankForCps(state.entryRaw.value)
       : rankForReactionMs(state.entryRaw.value);
   const saveRank = rankForReactionMs(state.saveRaw);
-  const grade = gradeForRank(combineRanks(entryRank, saveRank));
+  const rawGrade = gradeForRank(combineRanks(entryRank, saveRank));
+  // 매 판마다 대사를 후보 중 하나로 무작위로 뽑는다 — DOM과 공유 카드
+  // 이미지에 같은 문구가 쓰이도록 여기서 한 번만 뽑아 grade.desc에 얹는다.
+  const pickedDesc = rawGrade.descs[Math.floor(Math.random() * rawGrade.descs.length)];
+  const grade = { ...rawGrade, desc: pickedDesc };
 
   const overallScore = combineScores(state.entryScore, state.saveScore);
 
@@ -359,14 +363,17 @@ function showResult() {
   const entryGrade = gradeForRank(entryRank);
   const saveGrade = gradeForRank(saveRank);
 
+  // --chip-color는 .grade-row(부모)에 설정한다 — CSS 커스텀 프로퍼티는
+  // 자손으로만 상속되므로, 자식 칩에만 설정하면 부모 행의 color-mix()
+  // 배경/보더가 이 값을 못 본다.
   const entryChip = document.getElementById("chip-entry");
   entryChip.textContent = entryRank;
-  entryChip.style.setProperty("--chip-color", entryGrade.color);
+  entryChip.closest(".grade-row").style.setProperty("--chip-color", entryGrade.color);
   document.getElementById("stat-entry").textContent = entryDetail;
 
   const saveChip = document.getElementById("chip-save");
   saveChip.textContent = saveRank;
-  saveChip.style.setProperty("--chip-color", saveGrade.color);
+  saveChip.closest(".grade-row").style.setProperty("--chip-color", saveGrade.color);
   document.getElementById("stat-save").textContent = `${Math.round(state.saveRaw)}ms`;
 
   const previousBest = loadBestScore(window.localStorage);
