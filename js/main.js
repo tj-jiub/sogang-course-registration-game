@@ -13,6 +13,7 @@ import { drawResultCard } from "./resultCard.js";
 import { computeOpenAt, isOpen, formatClock, formatRemaining } from "./roundClock.js";
 
 const MASH_DURATION_MS = 3000;
+const ENTRY_LOADING_DELAY_MS = 600;
 const LOADING_DELAY_MS = 900;
 const SAVE_APPEAR_DELAY_RANGE_MS = [500, 1500];
 const THEME_STORAGE_KEY = "sogang-course-registration-game:theme";
@@ -263,7 +264,7 @@ function startEntryPhase(enterBtn, round) {
           const cps = clicks / elapsedSec;
           state.entryScore = normalizeCps(cps);
           state.entryRaw = { type: "cps", value: cps };
-          startQueuePhase();
+          startEntryLoadingPhase();
         }, MASH_DURATION_MS);
       }
     });
@@ -279,9 +280,18 @@ function startEntryPhase(enterBtn, round) {
       const reactionMs = now - round.openAt; // 정각 이후에만 유효하므로 항상 0 이상
       state.entryScore = normalizeReactionMs(reactionMs);
       state.entryRaw = { type: "ms", value: reactionMs };
-      startQueuePhase();
+      startEntryLoadingPhase();
     });
   }
+}
+
+// 수강신청 들어가기 클릭 직후, 대기열 카드가 뜨기 전에 화면 전체에
+// 로딩 스피너만 짧게 보여준다 — "처리 중" 느낌을 주는 짧은 전환 비트.
+async function startEntryLoadingPhase() {
+  stopStandbyClock();
+  showScreen("screen-loading");
+  await wait(ENTRY_LOADING_DELAY_MS);
+  startQueuePhase();
 }
 
 async function startQueuePhase() {
