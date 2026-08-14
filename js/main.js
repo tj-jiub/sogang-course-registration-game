@@ -1,8 +1,6 @@
 import {
-  normalizeCps,
   normalizeReactionMs,
   combineScores,
-  rankForCps,
   rankForReactionMs,
   combineRanks,
   gradeForRank,
@@ -12,7 +10,6 @@ import { loadBestScore, saveBestScore } from "./storage.js";
 import { drawResultCard } from "./resultCard.js";
 import { computeOpenAt, isOpen, formatClock, formatRemaining } from "./roundClock.js";
 
-const MASH_DURATION_MS = 3000;
 const ENTRY_LOADING_DELAY_MS = 600;
 const LOADING_DELAY_MS = 900;
 const SAVE_APPEAR_DELAY_RANGE_MS = [500, 1500];
@@ -68,7 +65,7 @@ const state = {
   mode: null, // "mash" | "reaction"
   entryScore: null,
   saveScore: null,
-  entryRaw: null, // { type: "cps" | "ms", value: number }
+  entryRaw: null, // ms — 정각 이후 첫 클릭까지의 반응속도 (두 모드 공통)
   saveRaw: null, // ms
 };
 
@@ -218,71 +215,36 @@ function flashHint(hintEl, text) {
 function startEntryPhase(enterBtn, round) {
   const hintEl = document.getElementById("entry-hint");
   hintEl.textContent = "정각이 되면 시작됩니다.";
-  document.getElementById("entry-spinner").hidden = true;
 
   // 두 모드 모두 규칙이 동일하다: 정각(10:30:00) 전 클릭/Space/Enter는
   // 버튼이 눌리는 모션 + "아직이에요!" 힌트 깜빡임만 재생될 뿐 실제로는
-  // 아무것도 세지 않는다. 판정은 클릭이 들어오는 바로 그 순간
-  // performance.now()를 round.openAt과 비교해서 정하고, 이를 위해 미리
-  // 예약해두는 타이머가 없다 — 그래서 타이머가 밀려서 판정이 늦어지는
-  // 일이 구조적으로 불가능하다.
-  if (state.mode === "mash") {
-    const spinnerEl = document.getElementById("entry-spinner");
-    let clicks = 0;
-    let windowStart = null;
-    let settled = false;
-    let openedHintShown = false;
+  // 아무것도 세지 않는다. 정각 이후 첫 유효 클릭 "한 번"이 라운드를
+  // 끝내고 곧바로 전체화면 로딩으로 넘어간다 — 연타 모드도 3초짜리
+  // 연속 클릭 측정 없이, 정각에 얼마나 빨리 반응하는지 하나만 잰다.
+  // 판정은 클릭이 들어오는 바로 그 순간 performance.now()를 round.openAt과
+  // 비교해서 정하고, 이를 위해 미리 예약해두는 타이머가 없다 — 그래서
+  // 타이머가 밀려서 판정이 늦어지는 일이 구조적으로 불가능하다.
+  const readyHint =
+    state.mode === "mash"
+      ? "지금 클릭 또는 Space/Enter!"
+      : "지금 클릭하세요!";
 
-    // 3초 타이머는 정각 시점이 아니라 "첫 유효 클릭" 시점부터 시작한다.
-    // 그래야 정각이 지났는데 누르지 않았다고 시간이 다 되어 저절로
-    // 다음 화면으로 넘어가는 일이 없다 — 최소 한 번은 눌러야 진행된다.
-    const unbind = bindTrigger(enterBtn, () => {
-      if (settled) return;
+  const unbind = bindTrigger(enterBtn, () => {
+    const now = performance.now();
+    if (!isOpen(now, round.openAt)) {
+      flashHint(hintEl, "아직이에요! 정각을 기다려주세요.");
+      return;
+    }
 
-      const now = performance.now();
-      if (!isOpen(now, round.openAt)) {
-        flashHint(hintEl, "아직이에요! 정각을 기다려주세요.");
-        return;
-      }
+    unbind();
+    hintEl.classList.remove("flash");
+    hintEl.textContent = readyHint;
 
-      if (!openedHintShown) {
-        openedHintShown = true;
-        hintEl.classList.remove("flash");
-        hintEl.textContent = "지금 클릭 또는 Space/Enter로 연타하세요!";
-      }
-
-      clicks += 1;
-      if (windowStart === null) {
-        windowStart = now;
-        spinnerEl.hidden = false; // 3초간 실제로 세고 있다는 걸 눈에 보여준다
-        setTimeout(() => {
-          if (settled) return;
-          settled = true;
-          spinnerEl.hidden = true;
-          unbind();
-          const elapsedSec = (performance.now() - windowStart) / 1000;
-          const cps = clicks / elapsedSec;
-          state.entryScore = normalizeCps(cps);
-          state.entryRaw = { type: "cps", value: cps };
-          startEntryLoadingPhase();
-        }, MASH_DURATION_MS);
-      }
-    });
-  } else {
-    const unbind = bindTrigger(enterBtn, () => {
-      const now = performance.now();
-      if (!isOpen(now, round.openAt)) {
-        flashHint(hintEl, "아직이에요! 정각을 기다려주세요.");
-        return;
-      }
-
-      unbind();
-      const reactionMs = now - round.openAt; // 정각 이후에만 유효하므로 항상 0 이상
-      state.entryScore = normalizeReactionMs(reactionMs);
-      state.entryRaw = { type: "ms", value: reactionMs };
-      startEntryLoadingPhase();
-    });
-  }
+    const reactionMs = now - round.openAt; // 정각 이후에만 유효하므로 항상 0 이상
+    state.entryScore = normalizeReactionMs(reactionMs);
+    state.entryRaw = reactionMs;
+    startEntryLoadingPhase();
+  });
 }
 
 // 수강신청 들어가기 클릭 직후, 대기열 카드가 뜨기 전에 화면 전체에
@@ -345,13 +307,11 @@ async function startTossPhase() {
 function showResult() {
   showScreen("screen-result");
 
-  // 등급은 명확한 ms/CPS 구간표로 정한다 (scoring.js 참고) — 입장/저장 중
+  // 등급은 명확한 ms 구간표로 정한다 (scoring.js 참고) — 입장/저장 중
   // 더 나쁜 쪽 등급이 최종 등급이 된다. 0-100 정규화 점수는 진행 바와
-  // 개인 최고 기록 비교용으로만 쓴다.
-  const entryRank =
-    state.entryRaw.type === "cps"
-      ? rankForCps(state.entryRaw.value)
-      : rankForReactionMs(state.entryRaw.value);
+  // 개인 최고 기록 비교용으로만 쓴다. 두 모드 모두 이제 "정각 이후 첫
+  // 클릭까지의 반응속도" 하나로 측정하므로 항상 ms 기준이다.
+  const entryRank = rankForReactionMs(state.entryRaw);
   const saveRank = rankForReactionMs(state.saveRaw);
   const rawGrade = gradeForRank(combineRanks(entryRank, saveRank));
   // 매 판마다 대사를 후보 중 하나로 무작위로 뽑는다 — DOM과 공유 카드
@@ -373,10 +333,7 @@ function showResult() {
   document.getElementById("result-grade").textContent = grade.name;
   document.getElementById("result-desc").textContent = grade.desc;
 
-  const entryDetail =
-    state.entryRaw.type === "cps"
-      ? `${state.entryRaw.value.toFixed(1)} CPS`
-      : `${Math.round(state.entryRaw.value)}ms`;
+  const entryDetail = `${Math.round(state.entryRaw)}ms`;
 
   const entryGrade = gradeForRank(entryRank);
   const saveGrade = gradeForRank(saveRank);
