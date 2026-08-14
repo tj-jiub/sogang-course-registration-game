@@ -269,9 +269,8 @@ h1, h2 {
 }
 
 /* Login — 사용자가 준비한 일러스트 배경 위에 로그인 카드가 오른쪽에
-   떠 있는 레퍼런스 레이아웃. 이미지 파일이 sogang-course-registration-game
-   /assets/login-bg.jpg 로 들어오면 자동으로 채워진다(파일이 아직 없으면
-   --paper 색으로 조용히 대체돼서 깨져 보이지 않는다).
+   떠 있는 레퍼런스 레이아웃. 이미지 파일은
+   sogang-course-registration-game/assets/login-bg.png.
    .screen.active의 flex-direction:column/justify-content:center를 이
    화면에서만 row/flex-end로 덮어써서 카드를 오른쪽에 띄운다 — display는
    여기서 절대 건드리지 않는다(다른 풀블리드 화면들과 같은 이유). */
@@ -280,7 +279,7 @@ h1, h2 {
   justify-content: flex-end;
   align-items: center;
   padding: 5vh 6vw;
-  background-image: url("assets/login-bg.jpg");
+  background-image: url("assets/login-bg.png");
   background-size: cover;
   background-position: center;
   background-color: var(--paper);
