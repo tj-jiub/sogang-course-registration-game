@@ -336,11 +336,15 @@ h1, h2 {
    여기서 같은 명시도(0-1-0)로 width:100vw 를 주면 소스 순서와 무관하게
    .screen.active가 이긴다 — 그래서 100vw가 적용되지 않고 음수 마진만
    걸려 왼쪽으로 밀려난 것처럼 보였다. 셀렉터를 .screen.screen-mode-select
-   로 올려 명시도를 맞추고(둘 다 0-2-0), 소스 순서상 이 규칙이 더 뒤에
-   있으므로 이제 이 규칙이 이긴다. */
+   로 올려 width만 명시도를 맞춘다(둘 다 0-2-0, 소스 순서상 이 규칙이 더
+   뒤에 있으므로 이긴다).
+   주의: 여기서 display를 다시 선언하면 절대 안 된다 — .screen-mode-select
+   클래스는 active 여부와 무관하게 #screen-mode에 항상 붙어있는 정적
+   클래스라서, display:flex를 여기 넣는 순간 로그인도 하기 전에 이 화면이
+   항상 보여버리는 버그가 난다(예전 .login-screen 버그와 동일 패턴).
+   보임/숨김은 오직 .screen{display:none} / .screen.active{display:flex}
+   에만 맡긴다. */
 .screen.screen-mode-select {
-  display: flex;
-  flex-direction: column;
   width: 100vw;
   margin-left: calc(-50vw + 50%);
   margin-right: calc(-50vw + 50%);
