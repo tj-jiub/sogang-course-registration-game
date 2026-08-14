@@ -15,8 +15,10 @@
   --ink-soft: #948b7c;
   --border: rgba(36, 31, 25, 0.14);
 
-  --accent: #8b1a1a;
-  --accent-dark: #5c1010;
+  /* 서강대학교 공식 서브 컬러 PANTONE 704 C(C30 M100 Y100 K30 ≈ #9e2a2f) —
+     프로젝트에서 쓰는 모든 빨간색을 이 톤 하나로 통일한다. */
+  --accent: #9e2a2f;
+  --accent-dark: #7e2226;
   --accent-ink: #fdfaf5;
 
   --success: #2e7d32;
@@ -49,8 +51,8 @@
     --ink-soft: #7c7364;
     --border: rgba(236, 230, 217, 0.14);
 
-    --accent: #d1493a;
-    --accent-dark: #8b1a1a;
+    --accent: #9e2a2f;
+    --accent-dark: #7e2226;
     --accent-ink: #fdfaf5;
 
     --success: #6cbf72;
@@ -78,8 +80,8 @@
   --ink-soft: #7c7364;
   --border: rgba(236, 230, 217, 0.14);
 
-  --accent: #d1493a;
-  --accent-dark: #8b1a1a;
+  --accent: #9e2a2f;
+  --accent-dark: #7e2226;
   --accent-ink: #fdfaf5;
 
   --success: #6cbf72;
