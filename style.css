@@ -332,7 +332,15 @@ h1, h2 {
    (데스크톱 와이드 화면에서는 실제 화면의 1/4에 불과했다). 아래
    calc(-50vw + 50%) 트릭으로 #app의 폭 제한 자체를 뚫고 나가 진짜
    브라우저 창 전체 폭을 기준으로 반반 나눈다. */
-.screen-mode-select {
+/* .screen.active (2클래스, 명시도 0-2-0)가 width:100% 를 선언하고 있어서
+   여기서 같은 명시도(0-1-0)로 width:100vw 를 주면 소스 순서와 무관하게
+   .screen.active가 이긴다 — 그래서 100vw가 적용되지 않고 음수 마진만
+   걸려 왼쪽으로 밀려난 것처럼 보였다. 셀렉터를 .screen.screen-mode-select
+   로 올려 명시도를 맞추고(둘 다 0-2-0), 소스 순서상 이 규칙이 더 뒤에
+   있으므로 이제 이 규칙이 이긴다. */
+.screen.screen-mode-select {
+  display: flex;
+  flex-direction: column;
   width: 100vw;
   margin-left: calc(-50vw + 50%);
   margin-right: calc(-50vw + 50%);
