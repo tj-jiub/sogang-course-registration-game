@@ -67,6 +67,8 @@ const state = {
   saveScore: null,
   entryRaw: null, // ms — 정각 이후 첫 클릭까지의 반응속도 (두 모드 공통)
   saveRaw: null, // ms
+  nickname: "",
+  studentId: "",
 };
 
 function showScreen(id) {
@@ -173,6 +175,8 @@ document.getElementById("server-clock").textContent = formatClock(SIM_START_SECO
 
 document.getElementById("login-form").addEventListener("submit", (event) => {
   event.preventDefault();
+  state.nickname = document.getElementById("login-nickname").value.trim() || "익명";
+  state.studentId = document.getElementById("login-student-id").value.trim() || "-";
   showScreen("screen-mode");
 });
 
@@ -332,6 +336,8 @@ function showResult() {
   document.getElementById("result-emoji").textContent = grade.emoji;
   document.getElementById("result-grade").textContent = grade.name;
   document.getElementById("result-desc").textContent = grade.desc;
+  document.getElementById("result-student-info").textContent =
+    `${state.nickname} · 학번 ${state.studentId}`;
 
   const entryDetail = `${Math.round(state.entryRaw)}ms`;
 

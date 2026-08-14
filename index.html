@@ -44,16 +44,16 @@
           <span class="lang-tab">ENGLISH</span>
         </div>
         <form id="login-form">
-          <input type="text" placeholder="20250000" required />
-          <input type="password" placeholder="비밀번호" required />
-          <p class="login-hint">ID(학번)/PW는 세인트 포털시스템과 동일합니다.</p>
+          <input type="text" id="login-nickname" placeholder="닉네임" maxlength="12" required />
+          <input type="text" id="login-student-id" placeholder="학번 (예: 20250000)" inputmode="numeric" maxlength="12" required />
+          <p class="login-hint">입력한 닉네임·학번은 결과 성적표에 표시됩니다.</p>
           <button type="submit" id="login-submit">LOGIN</button>
         </form>
         <p class="server-time">현재 서버 시간 | <span id="server-clock">10:29:50</span></p>
       </div>
     </section>
 
-    <section id="screen-mode" class="screen screen-mode-select">
+    <section id="screen-mode" class="screen screen-mode-select screen-full-bleed">
       <p class="mode-select-title">연습 모드를 선택하세요</p>
       <div class="mode-split">
         <button id="mode-mash" class="mode-half">
@@ -130,7 +130,7 @@
       </div>
     </section>
 
-    <section id="screen-result" class="screen">
+    <section id="screen-result" class="screen screen-full-bleed">
       <div class="panel-card result-card">
         <p id="result-newbest" class="result-newbest"></p>
 
@@ -141,6 +141,7 @@
 
         <h2 id="result-grade"></h2>
         <p id="result-desc"></p>
+        <p id="result-student-info" class="result-student-info"></p>
 
         <table class="grade-table">
           <thead>
