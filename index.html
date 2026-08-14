@@ -73,6 +73,7 @@
           <span>학번: 20250000</span>
           <span>학년: 4</span>
         </div>
+        <p class="save-hint">⚡ 입장 클릭 속도뿐 아니라, 이후 '저장'을 누르는 속도까지 함께 최종 등급에 반영됩니다.</p>
         <p id="standby-message" class="standby-banner">
           지금은 수강신청 시간이 아닙니다. 시작시간을 확인하세요.
         </p>
@@ -116,7 +117,6 @@
             <tr><td>COR1007-01</td><td>성찰과성장</td><td>1.00</td></tr>
           </tbody>
         </table>
-        <p class="save-hint">⚡ '저장'을 얼마나 빨리 누르는지도 최종 등급에 반영됩니다.</p>
       </div>
     </section>
 
@@ -145,18 +145,27 @@
 
         <table class="grade-table">
           <thead>
-            <tr><th>항목</th><th>등급</th><th>기록</th></tr>
+            <tr><th>과목번호</th><th>교과목</th><th>학점</th><th>평가</th></tr>
           </thead>
           <tbody>
+            <tr class="grade-table-group"><td colspan="4">2026-1 실전 기록</td></tr>
             <tr>
+              <td>ENT-01</td>
               <td>입장 속도</td>
-              <td id="chip-entry" class="grade-table-rank"></td>
               <td id="stat-entry" class="grade-table-value"></td>
+              <td class="grade-table-eval">
+                <span class="grade-check">✓</span>
+                <span id="chip-entry" class="grade-table-rank"></span>
+              </td>
             </tr>
             <tr>
+              <td>SAV-01</td>
               <td>저장 반응</td>
-              <td id="chip-save" class="grade-table-rank"></td>
               <td id="stat-save" class="grade-table-value"></td>
+              <td class="grade-table-eval">
+                <span class="grade-check">✓</span>
+                <span id="chip-save" class="grade-table-rank"></span>
+              </td>
             </tr>
           </tbody>
         </table>
