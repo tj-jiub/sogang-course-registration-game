@@ -287,9 +287,21 @@ h1, h2 {
   background-color: var(--paper);
 }
 
+/* 배경 그림 속에 그려진 가짜 로그인 카드가 원본 이미지 폭의 약 27%를
+   차지한다 — 실제 작동하는 카드도 그 비율에 맞춰 32vw로 키운다(약간
+   더 크게 잡은 건 카드가 background-size:cover로 크롭되면서 실제
+   화면에서 그림 속 카드가 이미지 자체보다 좀 더 커 보이기 때문).
+   viewport가 아주 좁을 땐 320px 아래로, 아주 넓을 땐 520px 위로는
+   안 커지게 clamp로 막는다. */
 .screen-login-hero .login-card {
-  max-width: 400px;
+  width: clamp(320px, 32vw, 520px);
+  padding: 36px 32px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.screen-login-hero .login-card h1 {
+  font-size: 1.7rem;
+  margin-bottom: 18px;
 }
 
 .login-card {
