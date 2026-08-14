@@ -354,10 +354,9 @@ h1, h2 {
   width: 100%;
 }
 
-/* 사이트 테마(라이트/다크)와 무관하게 항상 어두운 고정 배색을 쓴다 —
-   밝은 종이색 배경이 눈부시다는 피드백 반영. 라벨은 그 위에서 눈에 띄는
-   밝은 웜톤 하나로 고정한다(테마별 --accent를 쓰면 라이트 테마의 어두운
-   마룬이 이 어두운 배경 위에서 대비가 안 나온다). */
+/* 기본 상태는 밝게, 호버(또는 키보드 포커스) 시에만 rgba 검정 오버레이로
+   살짝 어둡게(Dim) — 그 영역 전체가 지금 활성화됐다는 걸 알려준다.
+   커서는 button 기본값이 이미 pointer라 별도 처리가 필요 없다. */
 .mode-half {
   flex: 1;
   display: flex;
@@ -366,8 +365,8 @@ h1, h2 {
   justify-content: center;
   gap: 10px;
   padding: 24px 12px;
-  background: #201c17;
-  color: #f3ece0;
+  background: var(--paper-card);
+  color: var(--ink);
   border: none;
   border-radius: 0;
   box-shadow: none;
@@ -375,26 +374,24 @@ h1, h2 {
 }
 
 .mode-half:first-child {
-  border-right: 1px solid rgba(243, 236, 224, 0.14);
+  border-right: 1px solid var(--border);
 }
-
-.mode-half:last-child { background: #15110d; }
 
 .mode-half:hover:not(:disabled),
 .mode-half:focus-visible {
-  box-shadow: inset 0 0 0 2000px rgba(255, 255, 255, 0.07), 0 12px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 0 0 2000px rgba(0, 0, 0, 0.08);
 }
 
 .mode-half-label {
   font-family: var(--font-display);
   font-size: clamp(2rem, 10vw, 2.8rem);
   font-weight: bold;
-  color: #e8734f;
+  color: var(--accent);
 }
 
 .mode-half small {
   font-weight: normal;
-  color: rgba(243, 236, 224, 0.65);
+  color: var(--ink-muted);
   font-size: 0.75rem;
   text-align: center;
 }

@@ -178,15 +178,23 @@ document.getElementById("login-form").addEventListener("submit", (event) => {
   showScreen("screen-mode");
 });
 
-document.getElementById("mode-mash").addEventListener("click", () => {
+// 왼쪽 절반(연타) / 오른쪽 절반(반응속도) 클릭 시 실행되는 함수.
+// 이름 그대로 각 모드의 시작점 — 실제 게임 진행(state.mode 설정 +
+// startStandby() 호출)에 콘솔 로그를 더했다.
+function startRapidClickMode() {
+  console.log("연타 모드(Rapid Click Mode) 시작");
   state.mode = "mash";
   startStandby();
-});
+}
 
-document.getElementById("mode-reaction").addEventListener("click", () => {
+function startAgilityMode() {
+  console.log("반응속도 모드(Agility Mode) 시작");
   state.mode = "reaction";
   startStandby();
-});
+}
+
+document.getElementById("mode-mash").addEventListener("click", startRapidClickMode);
+document.getElementById("mode-reaction").addEventListener("click", startAgilityMode);
 
 function startStandby() {
   showScreen("screen-standby");
