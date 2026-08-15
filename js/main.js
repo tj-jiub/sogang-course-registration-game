@@ -342,10 +342,17 @@ async function startTossPhase() {
   const entryRank = rankForReactionMs(state.entryRaw);
   const saveRank = rankForReactionMs(state.saveRaw);
   const successCount = COURSE_SUCCESS_COUNT[combineRanks(entryRank, saveRank)];
-  const toastLines = COURSES.map((course, index) =>
-    index < successCount ? `${course.name} 수강완료` : `${course.name} 수강신청 실패 X`
-  );
-  document.getElementById("toast-message").innerHTML = toastLines.join("<br />");
+  // 결과 화면 표에서 쓰는 것과 같은 초록 체크/빨강 엑스 뱃지(.grade-check)를
+  // 재사용해서 여기서도 같은 방식으로 성공/실패를 보여준다.
+  const toastRowsHtml = COURSES.map((course, index) => {
+    const passed = index < successCount;
+    return `
+      <div class="toast-row">
+        <span class="grade-check ${passed ? "" : "fail"}">${passed ? "✓" : "✗"}</span>
+        <span>${passed ? `${course.name} 수강완료` : `${course.name} 수강신청 실패 X`}</span>
+      </div>`;
+  }).join("");
+  document.getElementById("toast-message").innerHTML = toastRowsHtml;
 
   await wait(1200);
   showResult();
@@ -438,21 +445,36 @@ function showResult() {
   };
 
   const shareBtn = document.getElementById("result-share");
-  if (navigator.share) {
-    shareBtn.style.display = "inline-block";
-    shareBtn.onclick = async () => {
-      canvas.toBlob(async (blob) => {
-        const file = new File([blob], "result.png", { type: "image/png" });
-        await navigator.share({
-          files: [file],
-          title: "서강대 수강신청 클릭 연습 결과",
-          text: `나는 [${grade.name}]! 너도 도전해봐.`,
-        });
-      });
-    };
-  } else {
-    shareBtn.style.display = "none";
-  }
+  const shareHintEl = document.getElementById("share-hint");
+  shareBtn.onclick = async () => {
+    const shareText = `${state.nickname}의 수강신청을 이겨보세요!`;
+    const shareUrl = window.location.href;
+
+    // 모바일처럼 Web Share API + 파일 공유를 지원하는 환경에서는 토스 공유
+    // 시트처럼 문구+이미지를 그대로 넘긴다. 지원하지 않으면(대부분의
+    // 데스크톱 브라우저) 아래에서 링크 복사로 대체한다.
+    if (navigator.share) {
+      try {
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+        const file = new File([blob], "sogang-course-registration-result.png", { type: "image/png" });
+        const shareData = { title: "서강대 수강신청 클릭 연습", text: shareText, url: shareUrl };
+        if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+          shareData.files = [file];
+        }
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") return; // 사용자가 공유 시트를 취소함 — 실패 아님
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+      flashHint(shareHintEl, "링크가 복사되었습니다!");
+    } catch {
+      window.prompt("아래 링크를 복사하세요:", `${shareText} ${shareUrl}`);
+    }
+  };
 
   document.getElementById("result-replay").onclick = () => {
     state.mode = null;
