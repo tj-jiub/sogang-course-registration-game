@@ -275,10 +275,11 @@ h1, h2 {
    sogang-course-registration-game/assets/login-bg.webp
    (원본 PNG 1024x1024 정사각형을 WebP q88로 재압축, 약 160KB — 원본
    login-bg.png는 assets/에 백업으로 남겨두고 git에는 커밋하지 않는다).
-   정사각형 소스를 가로로 넓은 히어로에 cover로 채우면 위/아래가 크게
-   잘린다. top(0%)은 하늘이 너무 많이 보여서 40%로 내려 광장/분수 쪽이
-   더 드러나게 함 — 오벨리스크 꼭대기가 잘리지 않는 선에서 가장 아래로
-   내린 값(뷰포트가 아주 넓어지면 꼭대기가 살짝 잘릴 수 있음).
+   정사각형 소스를 가로로 넓은 히어로에 cover로 채우면 확대되면서 잘려서
+   답답한 느낌이 났다 — contain으로 바꿔 이미지를 크롭 없이 원본 그대로
+   축소해서 보여준다. 그러면 좌우로 여백이 남는데, 이미지 위쪽 가장자리
+   에서 스포이드로 딴 하늘색(#5aa7f5)을 background-color로 깔아서 여백이
+   튀지 않고 하늘과 이어지는 것처럼 자연스럽게 섞이게 한다.
    .screen.active의 flex-direction:column/justify-content:center를 이
    화면에서만 row/flex-end로 덮어써서 카드를 오른쪽에 띄운다 — display는
    여기서 절대 건드리지 않는다(다른 풀블리드 화면들과 같은 이유). */
@@ -288,9 +289,10 @@ h1, h2 {
   align-items: center;
   padding: 5vh 6vw;
   background-image: url("assets/login-bg.webp");
-  background-size: cover;
-  background-position: center 40%;
-  background-color: var(--paper);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: #5aa7f5;
 }
 
 .screen-login-hero .login-card {
