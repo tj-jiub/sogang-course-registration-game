@@ -47,7 +47,7 @@ const RANK_ORDER = ["S", "A", "B", "C", "D"];
 // 배열만 제공하고 Math.random은 쓰지 않는다).
 export const GRADE_INFO = {
   S: {
-    name: "사이버럭카",
+    name: "사기 클릭러",
     emoji: "🏆",
     color: "#f5a623",
     descs: [
@@ -59,7 +59,7 @@ export const GRADE_INFO = {
     ],
   },
   A: {
-    name: "수강신청 고인물",
+    name: "수강신청 고수",
     emoji: "🔥",
     color: "#4a90d9",
     descs: [
@@ -71,7 +71,7 @@ export const GRADE_INFO = {
     ],
   },
   B: {
-    name: "평범한 새내기",
+    name: "평타는 친다",
     emoji: "🙂",
     color: "#5cb85c",
     descs: [
@@ -83,7 +83,7 @@ export const GRADE_INFO = {
     ],
   },
   C: {
-    name: "장바구니만 채운 자",
+    name: "장바구니만 가득",
     emoji: "😅",
     color: "#e8a13c",
     descs: [
@@ -95,7 +95,7 @@ export const GRADE_INFO = {
     ],
   },
   D: {
-    name: "연습 좀 더 해라",
+    name: "연습 게임만 3년째",
     emoji: "💀",
     color: "#c0392b",
     descs: [

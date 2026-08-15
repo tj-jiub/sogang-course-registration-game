@@ -528,7 +528,17 @@ async function showResult() {
   const shareHintEl = document.getElementById("share-hint");
   shareBtn.onclick = async () => {
     const shareText = `${state.nickname}의 수강신청을 이겨보세요!`;
-    const shareUrl = window.location.href;
+    // 카톡/디스코드 등 링크 미리보기 봇은 이 페이지의 JS를 실행하지 않고
+    // 정적 og:image 태그만 읽는다 — 그래서 결과를 담은 이 URL 자체를
+    // middleware.js가 요청 시점에 가로채 등급별 이미지(api/og.js)로
+    // og:image를 바꿔치기한다. 쿼리스트링이 곧 공유 이미지의 데이터 소스.
+    const shareUrl = new URL(window.location.href);
+    shareUrl.search = "";
+    shareUrl.searchParams.set("rank", grade.rank);
+    shareUrl.searchParams.set("nickname", state.nickname);
+    shareUrl.searchParams.set("score", Math.round(overallScore));
+    shareUrl.searchParams.set("entryMs", Math.round(state.entryRaw));
+    shareUrl.searchParams.set("saveMs", Math.round(state.saveRaw));
 
     // navigator.share는 데스크톱 Chrome(Windows)에도 있다 — "지원 안 하면
     // 클립보드로 대체"라고 짜뒀더니 데스크톱에서도 OS 공유 패널이 열려서
@@ -540,7 +550,7 @@ async function showResult() {
       try {
         const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
         const file = new File([blob], "sogang-course-registration-result.png", { type: "image/png" });
-        const shareData = { title: "서강대 수강신청 클릭 연습", text: shareText, url: shareUrl };
+        const shareData = { title: "서강대 수강신청 클릭 연습", text: shareText, url: shareUrl.toString() };
         if (!navigator.canShare || navigator.canShare({ files: [file] })) {
           shareData.files = [file];
         }
