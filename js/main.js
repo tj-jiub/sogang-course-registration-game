@@ -120,6 +120,11 @@ function bindTrigger(button, onTrigger) {
   const onClick = () => fire();
   const onKeydown = (event) => {
     if (!isTriggerKey(event)) return;
+    // 마우스 클릭은 버튼이 disabled면 네이티브 click 자체가 안 뜨지만,
+    // 이 키보드 리스너는 document에 걸려있어 버튼 상태와 무관하게 늘
+    // 발동한다 — 반응속도 모드의 1초 쿨다운 중에 Space/Enter로 우회
+    // 연타하는 걸 막으려면 여기서도 직접 확인해야 한다.
+    if (button.disabled) return;
     event.preventDefault();
     fire();
   };
@@ -229,18 +234,26 @@ function flashHint(hintEl, text) {
   hintEl.classList.add("flash");
 }
 
+const REACTION_EARLY_CLICK_COOLDOWN_MS = 1000;
+
 function startEntryPhase(enterBtn, round) {
   const hintEl = document.getElementById("entry-hint");
   hintEl.textContent = "정각이 되면 시작됩니다.";
+  // 이전 라운드에서 걸린 쿨다운 타이머가 아직 안 풀렸을 수도 있으니
+  // 새 라운드는 항상 활성 상태로 시작한다.
+  enterBtn.disabled = false;
 
-  // 두 모드 모두 규칙이 동일하다: 정각(10:30:00) 전 클릭/Space/Enter는
-  // 버튼이 눌리는 모션 + "아직이에요!" 힌트 깜빡임만 재생될 뿐 실제로는
-  // 아무것도 세지 않는다. 정각 이후 첫 유효 클릭 "한 번"이 라운드를
-  // 끝내고 곧바로 전체화면 로딩으로 넘어간다 — 연타 모드도 3초짜리
-  // 연속 클릭 측정 없이, 정각에 얼마나 빨리 반응하는지 하나만 잰다.
-  // 판정은 클릭이 들어오는 바로 그 순간 performance.now()를 round.openAt과
-  // 비교해서 정하고, 이를 위해 미리 예약해두는 타이머가 없다 — 그래서
-  // 타이머가 밀려서 판정이 늦어지는 일이 구조적으로 불가능하다.
+  // 정각(10:30:00) 전 클릭/Space/Enter는 실제로는 아무것도 세지 않는다.
+  // 연타 모드는 "아직이에요!" 힌트만 깜빡이고 바로 다시 누를 수 있지만
+  // (연타가 이 모드의 정체성이라 미리 계속 눌러보는 것도 허용) 반응속도
+  // 모드는 미리 연타해서 정각 순간을 우연히 맞히는 걸 막아야 하므로,
+  // 조기 클릭 시 "지금은 수강신청 시간이 아닙니다" 힌트와 함께 버튼을
+  // REACTION_EARLY_CLICK_COOLDOWN_MS(1초)간 disabled 처리한다.
+  // 정각 이후 첫 유효 클릭 "한 번"이 라운드를 끝내고 곧바로 전체화면
+  // 로딩으로 넘어간다. 판정은 클릭이 들어오는 바로 그 순간
+  // performance.now()를 round.openAt과 비교해서 정하고, 이를 위해 미리
+  // 예약해두는 타이머가 없다 — 그래서 타이머가 밀려서 판정이 늦어지는
+  // 일이 구조적으로 불가능하다.
   const readyHint =
     state.mode === "mash"
       ? "지금 클릭 또는 Space/Enter!"
@@ -249,7 +262,15 @@ function startEntryPhase(enterBtn, round) {
   const unbind = bindTrigger(enterBtn, () => {
     const now = performance.now();
     if (!isOpen(now, round.openAt)) {
-      flashHint(hintEl, "아직이에요! 정각을 기다려주세요.");
+      if (state.mode === "reaction") {
+        flashHint(hintEl, "지금은 수강신청 시간이 아닙니다.");
+        enterBtn.disabled = true;
+        setTimeout(() => {
+          enterBtn.disabled = false;
+        }, REACTION_EARLY_CLICK_COOLDOWN_MS);
+      } else {
+        flashHint(hintEl, "아직이에요! 정각을 기다려주세요.");
+      }
       return;
     }
 
@@ -315,9 +336,17 @@ async function startLoadingPhase() {
 
 async function startTossPhase() {
   showScreen("screen-toast");
-  // 실제 신청 성공/실패는 등급에 따라 갈리므로(다음 화면 참고), 여기서는
-  // 특정 과목의 성공을 미리 단정하지 않는 중립적인 문구만 보여준다.
-  document.getElementById("toast-message").textContent = "수강신청 처리 결과를 확인하세요.";
+
+  // 결과 화면과 같은 등급→개수 로직으로 여기서도 과목별 성공/실패를
+  // 미리 나열한다 (rank 계산은 순수 함수라 두 번 불러도 결과가 같다).
+  const entryRank = rankForReactionMs(state.entryRaw);
+  const saveRank = rankForReactionMs(state.saveRaw);
+  const successCount = COURSE_SUCCESS_COUNT[combineRanks(entryRank, saveRank)];
+  const toastLines = COURSES.map((course, index) =>
+    index < successCount ? `${course.name} 수강완료` : `${course.name} 수강신청 실패 X`
+  );
+  document.getElementById("toast-message").innerHTML = toastLines.join("<br />");
+
   await wait(1200);
   showResult();
 }
