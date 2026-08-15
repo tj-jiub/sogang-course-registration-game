@@ -273,8 +273,12 @@ h1, h2 {
 /* Login — 사용자가 준비한 일러스트 배경 위에 로그인 카드가 오른쪽에
    떠 있는 레퍼런스 레이아웃. 이미지 파일은
    sogang-course-registration-game/assets/login-bg.webp
-   (원본 PNG 7.7MB를 1920px 폭 + WebP q82로 재압축, 약 350KB — 원본
+   (원본 PNG 1024x1024 정사각형을 WebP q88로 재압축, 약 160KB — 원본
    login-bg.png는 assets/에 백업으로 남겨두고 git에는 커밋하지 않는다).
+   정사각형 소스를 가로로 넓은 히어로에 cover로 채우면 위/아래가 크게
+   잘리는데, background-position을 center가 아닌 top으로 고정해서 상단
+   크롭을 0으로 만든다 — 그래야 뷰포트 비율과 무관하게 오벨리스크 꼭대기가
+   항상 보이고, 대신 잘리는 쪽은 하단 광장/분수(덜 중요한 영역)가 된다.
    .screen.active의 flex-direction:column/justify-content:center를 이
    화면에서만 row/flex-end로 덮어써서 카드를 오른쪽에 띄운다 — display는
    여기서 절대 건드리지 않는다(다른 풀블리드 화면들과 같은 이유). */
@@ -285,18 +289,12 @@ h1, h2 {
   padding: 5vh 6vw;
   background-image: url("assets/login-bg.webp");
   background-size: cover;
-  background-position: center;
+  background-position: center top;
   background-color: var(--paper);
 }
 
-/* 배경 그림 속에 그려진 가짜 로그인 카드가 원본 이미지 폭의 약 27%를
-   차지한다 — 실제 작동하는 카드도 그 비율에 맞춰 32vw로 키운다(약간
-   더 크게 잡은 건 카드가 background-size:cover로 크롭되면서 실제
-   화면에서 그림 속 카드가 이미지 자체보다 좀 더 커 보이기 때문).
-   viewport가 아주 좁을 땐 320px 아래로, 아주 넓을 땐 520px 위로는
-   안 커지게 clamp로 막는다. */
 .screen-login-hero .login-card {
-  width: clamp(320px, 32vw, 520px);
+  width: clamp(320px, 26vw, 440px);
   padding: 36px 32px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 }
