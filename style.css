@@ -272,46 +272,33 @@ h1, h2 {
 
 /* Login — 사용자가 준비한 일러스트 배경 위에 로그인 카드가 오른쪽에
    떠 있는 레퍼런스 레이아웃. 이미지 파일은
-   sogang-course-registration-game/assets/login-bg.webp
-   (원본 PNG 1024x1024 정사각형을 WebP q88로 재압축, 약 160KB — 원본
-   login-bg.png는 assets/에 백업으로 남겨두고 git에는 커밋하지 않는다).
-   정사각형 소스를 가로로 넓은 히어로에 cover로 채우면 확대되면서 잘려서
-   답답한 느낌이 났다 — contain으로 바꿔 이미지를 크롭 없이 원본 그대로
-   축소해서 보여준다. 그러면 좌우로 여백이 남는데, 이미지 위쪽 가장자리
-   에서 스포이드로 딴 하늘색(#5aa7f5)을 background-color로 깔아서 여백이
-   튀지 않고 하늘과 이어지는 것처럼 자연스럽게 섞이게 한다.
-   그림-여백 경계가 딱 잘려 보여서(이질감), 실제 이미지는 이 요소가 아니라
-   ::before 레이어로 옮기고 좌우 방향 mask-image를 씌워 경계가 서서히
-   흐려지며 배경색과 섞이게 한다(상하는 이미지가 히어로 높이에 꽉 차서
-   여백 자체가 없으므로 페이드를 걸면 오히려 오벨리스크 꼭대기/광장만
-   불필요하게 흐려진다 — 좌우로만 건다). z-index:0으로 스태킹 컨텍스트를
-   만들어야 ::before(z-index:-1)가 로그인 카드/홍보 배너보다 항상 아래에
-   깔린다.
+   sogang-course-registration-game/assets/login-bg.webp.
+   원본 소스는 1024x1024 정사각형인데, AI로 자연스럽게 옆을 넓혀줄
+   Higgsfield 크레딧이 없어서(사실상 0) 대신 ffmpeg로 양쪽 가장자리
+   1px 세로줄을 뽑아 512px씩 늘려 붙였다 — 내용을 그대로 거울복사하면
+   오벨리스크/사람이 좌우로 통째로 복제돼 보여서(실제로 시도해보니 훨씬
+   부자연스러움), 1px짜리 세로줄만 늘리면 그 위치의 하늘/나무/바닥 색이
+   세로로 그라데이션처럼 이어지고 형체가 겹쳐 보이지 않는다. 그 결과
+   2048x1024(2:1)로, 대부분의 가로로 넓은 히어로 비율과 얼추 맞아서
+   contain으로 꽉 채워도 남는 여백이 이전보다 훨씬 적다. 그래도 아주
+   넓은 화면에서 약간 남을 여백은 이미지 하늘색과 맞춘 배경색(#5aa7f5)
+   으로 채운다(원본 PNG는 assets/에 백업으로 남겨두고 git에는 커밋하지
+   않는다).
    .screen.active의 flex-direction:column/justify-content:center를 이
    화면에서만 row/flex-end로 덮어써서 카드를 오른쪽에 띄운다 — display는
    여기서 절대 건드리지 않는다(다른 풀블리드 화면들과 같은 이유). */
 .screen.screen-login-hero {
   position: relative;
-  z-index: 0;
   flex-direction: row;
   justify-content: flex-end;
   align-items: center;
   padding: 5vh 6vw;
   padding-right: 28vw;
-  background-color: #5aa7f5;
-}
-
-.screen-login-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
   background-image: url("assets/login-bg.webp");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  mask-image: linear-gradient(to right, transparent 0%, black 22%, black 78%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 22%, black 78%, transparent 100%);
+  background-color: #5aa7f5;
 }
 
 .screen-login-hero .login-card {
