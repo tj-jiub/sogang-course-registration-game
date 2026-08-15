@@ -276,9 +276,9 @@ h1, h2 {
    (원본 PNG 1024x1024 정사각형을 WebP q88로 재압축, 약 160KB — 원본
    login-bg.png는 assets/에 백업으로 남겨두고 git에는 커밋하지 않는다).
    정사각형 소스를 가로로 넓은 히어로에 cover로 채우면 위/아래가 크게
-   잘리는데, background-position을 center가 아닌 top으로 고정해서 상단
-   크롭을 0으로 만든다 — 그래야 뷰포트 비율과 무관하게 오벨리스크 꼭대기가
-   항상 보이고, 대신 잘리는 쪽은 하단 광장/분수(덜 중요한 영역)가 된다.
+   잘린다. top(0%)은 하늘이 너무 많이 보여서 40%로 내려 광장/분수 쪽이
+   더 드러나게 함 — 오벨리스크 꼭대기가 잘리지 않는 선에서 가장 아래로
+   내린 값(뷰포트가 아주 넓어지면 꼭대기가 살짝 잘릴 수 있음).
    .screen.active의 flex-direction:column/justify-content:center를 이
    화면에서만 row/flex-end로 덮어써서 카드를 오른쪽에 띄운다 — display는
    여기서 절대 건드리지 않는다(다른 풀블리드 화면들과 같은 이유). */
@@ -289,7 +289,7 @@ h1, h2 {
   padding: 5vh 6vw;
   background-image: url("assets/login-bg.webp");
   background-size: cover;
-  background-position: center top;
+  background-position: center 40%;
   background-color: var(--paper);
 }
 
