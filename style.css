@@ -280,20 +280,37 @@ h1, h2 {
    축소해서 보여준다. 그러면 좌우로 여백이 남는데, 이미지 위쪽 가장자리
    에서 스포이드로 딴 하늘색(#5aa7f5)을 background-color로 깔아서 여백이
    튀지 않고 하늘과 이어지는 것처럼 자연스럽게 섞이게 한다.
+   그림-여백 경계가 딱 잘려 보여서(이질감), 실제 이미지는 이 요소가 아니라
+   ::before 레이어로 옮기고 좌우 방향 mask-image를 씌워 경계가 서서히
+   흐려지며 배경색과 섞이게 한다(상하는 이미지가 히어로 높이에 꽉 차서
+   여백 자체가 없으므로 페이드를 걸면 오히려 오벨리스크 꼭대기/광장만
+   불필요하게 흐려진다 — 좌우로만 건다). z-index:0으로 스태킹 컨텍스트를
+   만들어야 ::before(z-index:-1)가 로그인 카드/홍보 배너보다 항상 아래에
+   깔린다.
    .screen.active의 flex-direction:column/justify-content:center를 이
    화면에서만 row/flex-end로 덮어써서 카드를 오른쪽에 띄운다 — display는
    여기서 절대 건드리지 않는다(다른 풀블리드 화면들과 같은 이유). */
 .screen.screen-login-hero {
   position: relative;
+  z-index: 0;
   flex-direction: row;
   justify-content: flex-end;
   align-items: center;
-  padding: 5vh 6vw;
+  padding: 5vh 11vw;
+  background-color: #5aa7f5;
+}
+
+.screen-login-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   background-image: url("assets/login-bg.webp");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  background-color: #5aa7f5;
+  mask-image: linear-gradient(to right, transparent 0%, black 22%, black 78%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 22%, black 78%, transparent 100%);
 }
 
 .screen-login-hero .login-card {
@@ -497,25 +514,32 @@ h1, h2 {
   text-align: center;
 }
 
-/* Standby */
-
-.standby-card { text-align: center; }
+/* Standby — 박스 카드 없이 화면을 상단(안내)/중앙(버튼)으로 나눈다.
+   .screen.active의 justify-content:center를 space-between으로 덮어써서
+   위/가운데 사이에 여백이 생기게 한다 — display는 여기서도 절대 건드리지
+   않는다(다른 화면들과 같은 이유). */
+.screen.screen-standby {
+  justify-content: space-between;
+  padding: 6vh 8vw;
+  text-align: center;
+}
 
 .student-info {
   display: flex;
   justify-content: space-between;
-  font-size: 0.8rem;
+  font-size: 1rem;
   color: var(--ink-muted);
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .standby-banner {
   background: var(--banner-wait-bg);
   color: var(--banner-wait-ink);
   border: 1px solid var(--banner-wait-border);
-  border-radius: 6px;
-  padding: 10px;
-  font-size: 0.9rem;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 1.15rem;
+  font-weight: bold;
 }
 
 .standby-banner.standby-banner--open {
@@ -524,34 +548,42 @@ h1, h2 {
   border-color: var(--success-border);
 }
 
-.standby-sub { font-size: 0.8rem; color: var(--ink-soft); margin: 8px 0 0; }
+.standby-sub { font-size: 1rem; color: var(--ink-soft); margin: 14px 0 0; }
 
 #standby-countdown {
   font-family: var(--font-display);
-  font-size: 2.6rem;
+  font-size: clamp(3rem, 9vw, 4.5rem);
   font-weight: bold;
   color: var(--accent);
-  margin: 8px 0 20px;
+  margin: 8px 0 0;
+}
+
+.standby-middle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .enter-btn {
   width: 100%;
-  padding: 18px;
+  max-width: 360px;
+  padding: 22px;
   border-radius: var(--radius-pill);
+  font-size: 1.2rem;
   font-weight: bold;
 }
 
 .enter-btn small {
   display: block;
   font-weight: normal;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   opacity: 0.85;
 }
 
 .entry-hint {
   min-height: 1.2em;
-  margin: 10px 0 0;
-  font-size: 0.85rem;
+  margin: 14px 0 0;
+  font-size: 1rem;
   color: var(--accent-dark);
   font-weight: bold;
 }
@@ -660,10 +692,15 @@ h1, h2 {
   font-weight: bold;
 }
 
+/* 대기 화면 버튼 바로 위 안내문 — "저장 속도도 점수에 반영된다"는 걸
+   놓치면 안 되는 규칙이라 무채색 대신 accent로 눈에 띄게 한다. */
 .save-hint {
-  margin: 12px 0 0;
-  font-size: 0.78rem;
-  color: var(--ink-muted);
+  max-width: 380px;
+  margin: 0 0 18px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--accent-dark);
+  line-height: 1.5;
   text-align: center;
 }
 
