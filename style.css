@@ -284,6 +284,7 @@ h1, h2 {
    화면에서만 row/flex-end로 덮어써서 카드를 오른쪽에 띄운다 — display는
    여기서 절대 건드리지 않는다(다른 풀블리드 화면들과 같은 이유). */
 .screen.screen-login-hero {
+  position: relative;
   flex-direction: row;
   justify-content: flex-end;
   align-items: center;
@@ -299,6 +300,51 @@ h1, h2 {
   width: clamp(320px, 26vw, 440px);
   padding: 36px 32px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+/* contain 배경이 남긴 왼쪽 여백에 동아리 무료 홍보 배너를 띄운다.
+   여백이 실제로 존재하는 넓은 화면에서만 보이도록 900px 아래에서는
+   숨긴다(좁은 화면은 여백이 사라지고 그림/카드와 겹치게 됨). */
+.club-promo {
+  position: absolute;
+  left: 24px;
+  bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 16px;
+  background: var(--paper-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.club-promo:hover,
+.club-promo:focus-visible {
+  box-shadow: var(--shadow-raised);
+}
+
+.club-promo:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.club-promo-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.club-promo-contact {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 900px) {
+  .club-promo {
+    display: none;
+  }
 }
 
 .screen-login-hero .login-card h1 {
