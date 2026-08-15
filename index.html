@@ -37,24 +37,45 @@
 
   <main id="app">
     <section id="screen-login" class="screen active screen-full-bleed screen-login-hero">
-      <div class="login-card">
-        <h1>수강신청 로그인</h1>
-        <div class="lang-tabs">
-          <span class="lang-tab active">KOREAN</span>
-          <span class="lang-tab">ENGLISH</span>
+      <div class="login-hero-image"></div>
+
+      <div class="login-hero-card">
+        <div class="login-card">
+          <h1>수강신청 로그인</h1>
+          <div class="lang-tabs">
+            <span class="lang-tab active">KOREAN</span>
+            <span class="lang-tab">ENGLISH</span>
+          </div>
+          <form id="login-form">
+            <input type="text" id="login-nickname" placeholder="닉네임" maxlength="12" required />
+            <input type="text" id="login-student-id" placeholder="학번 (예: 20250000)" inputmode="numeric" maxlength="12" required />
+            <p class="login-hint">입력한 닉네임·학번은 결과 성적표에 표시됩니다.</p>
+            <button type="submit" id="login-submit">LOGIN</button>
+          </form>
+          <p class="server-time">현재 서버 시간 | <span id="server-clock">10:29:50</span></p>
         </div>
-        <form id="login-form">
-          <input type="text" id="login-nickname" placeholder="닉네임" maxlength="12" required />
-          <input type="text" id="login-student-id" placeholder="학번 (예: 20250000)" inputmode="numeric" maxlength="12" required />
-          <p class="login-hint">입력한 닉네임·학번은 결과 성적표에 표시됩니다.</p>
-          <button type="submit" id="login-submit">LOGIN</button>
-        </form>
-        <p class="server-time">현재 서버 시간 | <span id="server-clock">10:29:50</span></p>
       </div>
-      <a class="club-promo" href="mailto:jiub91095@gmail.com">
-        <span class="club-promo-title">🎪 동아리 무료 홍보</span>
-        <span class="club-promo-contact">jiub91095@gmail.com</span>
-      </a>
+
+      <div class="login-hero-ads">
+        <a class="ad-banner" href="mailto:jiub91095@gmail.com">
+          <span class="ad-banner-badge">광고 문의</span>
+          <span class="ad-banner-title">🎪 동아리 무료 홍보</span>
+          <span class="ad-banner-desc">우리 동아리 배너, 여기에 무료로 실어드려요</span>
+          <span class="ad-banner-contact">jiub91095@gmail.com</span>
+        </a>
+        <a class="ad-banner" href="mailto:jiub91095@gmail.com">
+          <span class="ad-banner-badge">광고 자리 비어있음</span>
+          <span class="ad-banner-title">📢 여기에 배너 광고</span>
+          <span class="ad-banner-desc">수강신청 시즌 트래픽, 지금 문의하세요</span>
+          <span class="ad-banner-contact">jiub91095@gmail.com</span>
+        </a>
+        <a class="ad-banner" href="mailto:jiub91095@gmail.com">
+          <span class="ad-banner-badge">광고 자리 비어있음</span>
+          <span class="ad-banner-title">📢 여기에 배너 광고</span>
+          <span class="ad-banner-desc">행사·모집 공고 홍보 자리</span>
+          <span class="ad-banner-contact">jiub91095@gmail.com</span>
+        </a>
+      </div>
     </section>
 
     <section id="screen-mode" class="screen screen-mode-select screen-full-bleed">

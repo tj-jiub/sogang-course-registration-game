@@ -270,85 +270,131 @@ h1, h2 {
   color: var(--ink);
 }
 
-/* Login — 사용자가 준비한 일러스트 배경 위에 로그인 카드가 오른쪽에
-   떠 있는 레퍼런스 레이아웃. 이미지 파일은
-   sogang-course-registration-game/assets/login-bg.webp.
-   원본 소스는 1024x1024 정사각형인데, AI로 자연스럽게 옆을 넓혀줄
-   Higgsfield 크레딧이 없어서(사실상 0) 대신 ffmpeg로 양쪽 가장자리
-   1px 세로줄을 뽑아 512px씩 늘려 붙였다 — 내용을 그대로 거울복사하면
-   오벨리스크/사람이 좌우로 통째로 복제돼 보여서(실제로 시도해보니 훨씬
-   부자연스러움), 1px짜리 세로줄만 늘리면 그 위치의 하늘/나무/바닥 색이
-   세로로 그라데이션처럼 이어지고 형체가 겹쳐 보이지 않는다. 그 결과
-   2048x1024(2:1)로, 대부분의 가로로 넓은 히어로 비율과 얼추 맞아서
-   contain으로 꽉 채워도 남는 여백이 이전보다 훨씬 적다. 그래도 아주
-   넓은 화면에서 약간 남을 여백은 이미지 하늘색과 맞춘 배경색(#5aa7f5)
-   으로 채운다(원본 PNG는 assets/에 백업으로 남겨두고 git에는 커밋하지
-   않는다).
-   .screen.active의 flex-direction:column/justify-content:center를 이
-   화면에서만 row/flex-end로 덮어써서 카드를 오른쪽에 띄운다 — display는
-   여기서 절대 건드리지 않는다(다른 풀블리드 화면들과 같은 이유). */
+/* Login — 세 칸으로 명확히 나눈 레이아웃: 왼쪽은 원본 일러스트 전체 화면,
+   가운데는 로그인 카드(이미지/광고 어느 쪽에도 걸치지 않게 자기 칸을
+   따로 가짐), 오른쪽은 실제 배너 광고 크기(세로로 2~3개 스택되는 카드형
+   슬롯)로 예상되는 광고 자리. 이미지를 억지로 늘리거나 흐리게 만드는
+   대신, 각자 자기 칸 안에서 자연스럽게 보이게 한다.
+   이미지 파일은 sogang-course-registration-game/assets/login-bg.webp
+   (원본 1024x1024 정사각형, WebP q88 재압축 — 원본 PNG는 assets/에
+   백업으로 남겨두고 git에는 커밋하지 않는다).
+   .screen.active의 flex-direction:column을 이 화면에서만 row로
+   덮어쓴다 — display는 여기서도 절대 건드리지 않는다(다른 풀블리드
+   화면들과 같은 이유). */
 .screen.screen-login-hero {
-  position: relative;
   flex-direction: row;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 5vh 6vw;
-  padding-right: 28vw;
+  align-items: stretch;
+  padding: 0;
+}
+
+.login-hero-image {
+  flex: 0 0 42%;
+  min-width: 0;
   background-image: url("assets/login-bg.webp");
-  background-size: contain;
-  background-repeat: no-repeat;
+  background-size: cover;
   background-position: center;
-  background-color: #5aa7f5;
+}
+
+.login-hero-card {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5vh 3vw;
+  background: var(--paper);
 }
 
 .screen-login-hero .login-card {
-  width: clamp(320px, 26vw, 440px);
+  width: 100%;
+  max-width: 380px;
   padding: 36px 32px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 }
 
-/* contain 배경이 남긴 왼쪽 여백에 동아리 무료 홍보 배너를 띄운다.
-   여백이 실제로 존재하는 넓은 화면에서만 보이도록 900px 아래에서는
-   숨긴다(좁은 화면은 여백이 사라지고 그림/카드와 겹치게 됨). */
-.club-promo {
-  position: absolute;
-  left: 24px;
-  bottom: 24px;
+.login-hero-ads {
+  flex: 0 0 300px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 10px 16px;
+  justify-content: center;
+  gap: 14px;
+  padding: 3vh 20px;
+  background: var(--paper-raised);
+  border-left: 1px solid var(--border);
+}
+
+.ad-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 160px;
+  padding: 18px;
   background: var(--paper-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
   text-decoration: none;
   color: var(--ink);
+  text-align: center;
+  transition: box-shadow 0.15s ease-out;
 }
 
-.club-promo:hover,
-.club-promo:focus-visible {
+.ad-banner:hover,
+.ad-banner:focus-visible {
   box-shadow: var(--shadow-raised);
 }
 
-.club-promo:focus-visible {
+.ad-banner:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.club-promo-title {
-  font-size: 0.8rem;
-  font-weight: 700;
+.ad-banner-badge {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.club-promo-contact {
+.ad-banner-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: bold;
+}
+
+.ad-banner-desc {
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+}
+
+.ad-banner-contact {
   font-size: 0.72rem;
   color: var(--ink-soft);
+  margin-top: 4px;
 }
 
-@media (max-width: 900px) {
-  .club-promo {
-    display: none;
+@media (max-width: 860px) {
+  .screen.screen-login-hero {
+    flex-direction: column;
+  }
+
+  .login-hero-image {
+    flex: 0 0 220px;
+  }
+
+  .login-hero-ads {
+    flex: 0 0 auto;
+    flex-direction: row;
+    overflow-x: auto;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .ad-banner {
+    flex: 0 0 220px;
+    min-height: 150px;
   }
 }
 
@@ -365,12 +411,6 @@ h1, h2 {
   width: 100%;
   box-shadow: var(--shadow-card);
   text-align: center;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .screen-login-hero .login-card::before {
-    background: rgba(0, 0, 0, 0.25);
-  }
 }
 
 .login-card h1 { font-size: 1.4rem; margin: 0 0 12px; }
