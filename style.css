@@ -538,8 +538,15 @@ h1, h2 {
   border-right: 1px solid var(--border);
 }
 
+/* background를 여기서 다시 선언하는 이유: 전역 button:hover:not(:disabled)
+   규칙(background: var(--accent-dark))이 명시도상 .mode-half의 기본
+   background 선언을 이겨버려서, 마우스를 올리면 카드 전체가 진한 마룬
+   단색으로 바뀌고 그 위 텍스트(--ink, 어두운 색)가 거의 안 보이는 문제가
+   있었다. 여기서 같은 명시도 급에 background를 다시 못박아 무채색 오버레이
+   효과만 남긴다. */
 .mode-half:hover:not(:disabled),
 .mode-half:focus-visible {
+  background: var(--paper-card);
   box-shadow: inset 0 0 0 2000px rgba(0, 0, 0, 0.08);
 }
 
