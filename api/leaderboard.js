@@ -28,9 +28,9 @@ export default async function handler(req, res) {
   }
 
   const url = new URL(req.url, "http://localhost");
-  const mode = getMode(url.searchParams.get("mode"));
 
   if (req.method === "GET") {
+    const mode = getMode(url.searchParams.get("mode"));
     sendJson(res, 200, state[mode]);
     return;
   }
@@ -64,6 +64,13 @@ export default async function handler(req, res) {
     sendJson(res, 400, { error: "Invalid JSON body" });
     return;
   }
+
+  // 클라이언트(js/storage.js의 saveLeaderboardEntryRemote)는 mode를
+  // 쿼리스트링이 아니라 JSON 바디에 담아 보낸다 — 여기서 쿼리스트링만
+  // 읽던 게 버그였다: 모든 POST가 mode 파라미터 없이 들어와 매번
+  // getMode(undefined)가 "reaction"으로 기본값 처리되면서, 연타 모드로
+  // 플레이해도 항상 reaction 버킷에 저장되고 mash 랭킹은 영영 비어 있었다.
+  const mode = getMode(parsed.mode ?? url.searchParams.get("mode"));
 
   const entry = parsed.entry ?? parsed;
   if (!entry || !Number.isFinite(Number(entry.score))) {
