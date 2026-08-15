@@ -296,7 +296,8 @@ h1, h2 {
   flex-direction: row;
   justify-content: flex-end;
   align-items: center;
-  padding: 5vh 11vw;
+  padding: 5vh 6vw;
+  padding-right: 28vw;
   background-color: #5aa7f5;
 }
 
@@ -514,14 +515,34 @@ h1, h2 {
   text-align: center;
 }
 
-/* Standby — 박스 카드 없이 화면을 상단(안내)/중앙(버튼)으로 나눈다.
-   .screen.active의 justify-content:center를 space-between으로 덮어써서
-   위/가운데 사이에 여백이 생기게 한다 — display는 여기서도 절대 건드리지
-   않는다(다른 화면들과 같은 이유). */
+/* Standby — 뒤쪽 화면들(대기/저장)처럼 흰 배경 + 버건디 포인트의 "실제
+   시스템 페이지" 톤으로 맞춘다. 안내 정보는 화면 상단에 꽉 찬 헤더 바로
+   붙이고(screen-full-bleed로 진짜 뷰포트 끝까지), 버튼은 그 아래 남는
+   공간(standby-middle, flex:1)에서 혼자 가운데에 온다. 헤더 바 밑에
+   버건디 선을 둬서 안내 영역과 버튼 영역을 시각적으로 구분한다.
+   .screen.active의 justify-content:center를 flex-start로 덮어쓴다 —
+   display는 여기서도 절대 건드리지 않는다(다른 화면들과 같은 이유). */
 .screen.screen-standby {
-  justify-content: space-between;
-  padding: 6vh 8vw;
+  justify-content: flex-start;
+  padding: 0;
   text-align: center;
+}
+
+.standby-header {
+  width: 100%;
+  background: var(--paper-card);
+  border-bottom: 4px solid var(--accent);
+  padding: 28px 8vw 22px;
+}
+
+.standby-middle {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6vh 8vw;
 }
 
 .student-info {
@@ -556,12 +577,6 @@ h1, h2 {
   font-weight: bold;
   color: var(--accent);
   margin: 8px 0 0;
-}
-
-.standby-middle {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
 .enter-btn {
@@ -695,12 +710,12 @@ h1, h2 {
 /* 대기 화면 버튼 바로 위 안내문 — "저장 속도도 점수에 반영된다"는 걸
    놓치면 안 되는 규칙이라 무채색 대신 accent로 눈에 띄게 한다. */
 .save-hint {
-  max-width: 380px;
-  margin: 0 0 18px;
+  max-width: 480px;
+  margin: 0 0 22px;
   font-size: 1rem;
   font-weight: bold;
   color: var(--accent-dark);
-  line-height: 1.5;
+  line-height: 1.7;
   text-align: center;
 }
 
