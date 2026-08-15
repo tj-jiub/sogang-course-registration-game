@@ -15,6 +15,19 @@ const LOADING_DELAY_MS = 900;
 const SAVE_APPEAR_DELAY_RANGE_MS = [500, 1500];
 const THEME_STORAGE_KEY = "sogang-course-registration-game:theme";
 
+// 저장 화면(screen-save)의 dummy-course-table과 순서/내용을 맞춘다 — 같은
+// 4과목이 결과 화면에서는 등급에 따라 몇 개나 실제로 신청됐는지로 나뉜다.
+const COURSES = [
+  { code: "LCU4030-01", name: "초급스페인어", credit: "3.00" },
+  { code: "LCU4035-01", name: "초급러시아어", credit: "3.00" },
+  { code: "COR1007-01", name: "성찰과성장", credit: "1.00" },
+  { code: "MGI2392", name: "재무관리", credit: "3.00" },
+];
+
+// 등급별로 COURSES 앞에서부터 몇 개까지 신청 성공 처리할지 — S/A는 전부,
+// D는 전부 실패, 그 사이는 한 개씩 줄어든다.
+const COURSE_SUCCESS_COUNT = { S: 4, A: 4, B: 3, C: 2, D: 0 };
+
 // index.html의 인라인 스크립트가 FOUC 방지를 위해 data-theme을 이미 적용해둔
 // 상태에서 시작한다. 여기서는 버튼 아이콘 동기화와 토글 동작만 담당한다.
 function initThemeToggle() {
@@ -302,8 +315,9 @@ async function startLoadingPhase() {
 
 async function startTossPhase() {
   showScreen("screen-toast");
-  document.getElementById("toast-message").textContent =
-    "[LCU4030-01] 초급스페인어 - 수강신청 되었습니다.";
+  // 실제 신청 성공/실패는 등급에 따라 갈리므로(다음 화면 참고), 여기서는
+  // 특정 과목의 성공을 미리 단정하지 않는 중립적인 문구만 보여준다.
+  document.getElementById("toast-message").textContent = "수강신청 처리 결과를 확인하세요.";
   await wait(1200);
   showResult();
 }
@@ -353,6 +367,26 @@ function showResult() {
   saveChip.textContent = saveRank;
   saveChip.style.color = saveGrade.color;
   document.getElementById("stat-save").textContent = `${Math.round(state.saveRaw)}ms`;
+
+  // 최종 등급이 허용하는 개수만큼 COURSES 앞에서부터 신청 성공 처리한다
+  // (초급스페인어가 목표 과목이라 맨 앞에 두고, 등급이 낮을수록 뒤 과목부터
+  // 밀려난다).
+  const successCount = COURSE_SUCCESS_COUNT[grade.rank];
+  const courseRowsHtml = COURSES.map((course, index) => {
+    const passed = index < successCount;
+    return `
+      <tr class="course-row ${passed ? "pass" : "fail"}">
+        <td>${course.code}</td>
+        <td>${course.name}</td>
+        <td class="grade-table-value">${course.credit}</td>
+        <td class="grade-table-eval">
+          <span class="grade-check ${passed ? "" : "fail"}">${passed ? "✓" : "✗"}</span>
+          <span class="course-result-status ${passed ? "pass" : "fail"}">${passed ? "완료" : "마감"}</span>
+        </td>
+      </tr>`;
+  }).join("");
+  document.getElementById("course-result-rows").innerHTML =
+    `<tr class="grade-table-group"><td colspan="4">2026-1 신청 결과 (${successCount}/${COURSES.length}과목)</td></tr>${courseRowsHtml}`;
 
   const previousBest = loadBestScore(window.localStorage);
   saveBestScore(overallScore, window.localStorage);

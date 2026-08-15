@@ -956,6 +956,25 @@ h1, h2 {
   white-space: nowrap;
 }
 
+/* 등급에 따라 갈리는 실제 과목 신청 결과 — 실패 행은 취소선으로 눈에
+   띄게 표시한다(eval 셀 자체는 이미 ✗/마감으로 뜻이 분명하니 제외). */
+.course-row.fail td:not(.grade-table-eval) {
+  color: var(--ink-soft);
+  text-decoration: line-through;
+}
+
+.grade-check.fail {
+  background: var(--accent-dark);
+}
+
+.course-result-status {
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+
+.course-result-status.pass { color: var(--success); }
+.course-result-status.fail { color: var(--accent-dark); }
+
 #result-best { font-size: 0.82rem; color: var(--ink-soft); margin: 0 0 10px; }
 
 /* 캔버스(공유용 이미지)는 기본 접힘 — 결과 화면이 스크롤 없이 한 화면에
