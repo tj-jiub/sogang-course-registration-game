@@ -44,12 +44,28 @@ function statBox(label, value, accent) {
       borderRadius: 10,
     },
   }, [
-    el("div", { style: { fontSize: 20, color: INK_MUTED } }, [label]),
-    el("div", { style: { fontSize: 30, fontWeight: 800, color: accent || INK } }, [value]),
+    el("div", { style: { display: "flex", fontSize: 20, color: INK_MUTED } }, [label]),
+    el("div", { style: { display: "flex", fontSize: 30, fontWeight: 800, color: accent || INK } }, [value]),
   ]);
 }
 
 export default async function handler(request) {
+  try {
+    return await renderResultImage(request);
+  } catch (error) {
+    // ImageResponse가 헤더(200, image/png)를 먼저 커밋하고 실제 PNG 인코딩은
+    // 스트림 뒤에서 지연 실행되는 구조라, 렌더링 중 던진 에러는 여기서 못 잡고
+    // "200 응답 + 0바이트 본문"으로 새버릴 수 있다. 그런 부류의 실패는 이
+    // try/catch로도 못 잡지만, 폰트 fetch 실패 등 handler 본문에서 직접
+    // 던지는 에러는 최소한 여기서 원인이 보이는 500으로 남긴다.
+    return new Response(JSON.stringify({ error: String(error?.stack || error) }), {
+      status: 500,
+      headers: { "content-type": "application/json; charset=utf-8" },
+    });
+  }
+}
+
+async function renderResultImage(request) {
   const { searchParams } = new URL(request.url);
 
   const rankParam = (searchParams.get("rank") || "B").toUpperCase();
@@ -65,7 +81,10 @@ export default async function handler(request) {
 
   const HEADER_TEXT = "서강대 수강신청 클릭 연습";
   const FOOTER_TEXT = "비공식 연습용 게임 · 서강대학교 종합정보시스템과 무관";
-  const allText = `${HEADER_TEXT}${nickname}${grade.emoji}${grade.name}${desc}입장저장합계${rank}${entryMs}ms${saveMs}ms${score}점${FOOTER_TEXT}`;
+  // satori(@vercel/og)는 이모지 글리프를 렌더링하지 못하고 조용히
+  // 스트림을 끊어버린다(200 응답에 본문만 0바이트) — Noto Sans KR에는
+  // 이모지가 없으므로 이미지에 넣을 텍스트에서는 아예 뺀다.
+  const allText = `${HEADER_TEXT}${nickname}${grade.name}${desc}입장저장합계${rank}${entryMs}ms${saveMs}ms${score}점${FOOTER_TEXT}`;
 
   const [regular, bold] = await Promise.all([
     loadKoreanFont(allText, 500),
@@ -122,7 +141,7 @@ export default async function handler(request) {
 
       el("div", { style: { display: "flex", flexDirection: "column", flex: 1, gap: 14 } }, [
         el("div", { style: { display: "flex", fontSize: 40, fontWeight: 800, color: INK } }, [
-          `${grade.emoji} ${grade.name}`,
+          grade.name,
         ]),
         el("div", { style: { display: "flex", fontSize: 24, color: INK_MUTED } }, [desc]),
         el("div", { style: { display: "flex", fontSize: 22, color: INK_MUTED } }, [
@@ -149,6 +168,8 @@ export default async function handler(request) {
     }, [FOOTER_TEXT]),
   ]);
 
+  // ImageResponse는 기본값으로 이미 동일한 max-age=31536000 캐시 헤더를
+  // 붙이므로 여기서 다시 지정하면 헤더가 중복돼 붙는다 — 지정하지 않는다.
   return new ImageResponse(image, {
     width: 1200,
     height: 630,
@@ -156,8 +177,5 @@ export default async function handler(request) {
       { name: "Noto Sans KR", data: regular, weight: 500, style: "normal" },
       { name: "Noto Sans KR", data: bold, weight: 800, style: "normal" },
     ],
-    headers: {
-      "Cache-Control": "public, immutable, no-transform, max-age=31536000",
-    },
   });
 }
