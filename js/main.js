@@ -450,10 +450,13 @@ function showResult() {
     const shareText = `${state.nickname}의 수강신청을 이겨보세요!`;
     const shareUrl = window.location.href;
 
-    // 모바일처럼 Web Share API + 파일 공유를 지원하는 환경에서는 토스 공유
-    // 시트처럼 문구+이미지를 그대로 넘긴다. 지원하지 않으면(대부분의
-    // 데스크톱 브라우저) 아래에서 링크 복사로 대체한다.
-    if (navigator.share) {
+    // navigator.share는 데스크톱 Chrome(Windows)에도 있다 — "지원 안 하면
+    // 클립보드로 대체"라고 짜뒀더니 데스크톱에서도 OS 공유 패널이 열려서
+    // 클립보드 복사가 아예 실행되지 않는 게 원인이었다(사용자가 패널을
+    // 닫으면 AbortError로 그냥 종료). 그래서 터치 기반 기기(모바일)에서만
+    // 네이티브 공유 시트를 쓰고, 데스크톱은 항상 클립보드 복사로 간다.
+    const isTouchPrimary = window.matchMedia?.("(pointer: coarse)").matches;
+    if (isTouchPrimary && navigator.share) {
       try {
         const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
         const file = new File([blob], "sogang-course-registration-result.png", { type: "image/png" });
