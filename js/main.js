@@ -6,7 +6,12 @@ import {
   gradeForRank,
 } from "./scoring.js";
 import { buildQueueSteps } from "./queueSim.js";
-import { loadBestScore, saveBestScore } from "./storage.js";
+import {
+  loadBestScore,
+  saveBestScore,
+  loadLeaderboardEntries,
+  saveLeaderboardEntryRemote,
+} from "./storage.js";
 import { drawResultCard } from "./resultCard.js";
 import { computeOpenAt, isOpen, formatClock, formatRemaining } from "./roundClock.js";
 
@@ -318,13 +323,15 @@ function startSavePhase() {
     saveBtn.style.visibility = "visible";
     const appearAt = performance.now();
 
-    const unbind = bindTrigger(saveBtn, () => {
-      unbind();
+    const onSaveClick = () => {
+      saveBtn.removeEventListener("click", onSaveClick);
       const reactionMs = performance.now() - appearAt;
       state.saveScore = normalizeReactionMs(reactionMs);
       state.saveRaw = reactionMs;
       startLoadingPhase();
-    });
+    };
+
+    saveBtn.addEventListener("click", onSaveClick, { once: true });
   }, appearDelay);
 }
 
@@ -358,7 +365,62 @@ async function startTossPhase() {
   showResult();
 }
 
-function showResult() {
+async function renderLeaderboard(mode = state.mode || "reaction") {
+  const listEl = document.getElementById("ranking-list");
+  const entries = await loadLeaderboardEntries(mode, window.localStorage, window.fetch.bind(window));
+  const panel = document.getElementById("ranking-panel");
+  const titleEl = document.getElementById("ranking-title");
+  const subtitleEl = document.getElementById("ranking-subtitle");
+
+  const modeLabel = mode === "mash" ? "연타 랭킹" : "반응 속도 랭킹";
+  if (titleEl) titleEl.textContent = modeLabel;
+  if (subtitleEl) subtitleEl.textContent = mode === "mash" ? "MASH MODE" : "REACTION MODE";
+
+  if (!entries.length) {
+    listEl.innerHTML = '<li class="ranking-empty">아직 기록이 없습니다.</li>';
+    if (panel) panel.dataset.mode = mode;
+    return;
+  }
+
+  listEl.innerHTML = entries.slice(0, 10).map((entry, index) => {
+    const avatar = entry.nickname?.charAt(0)?.toUpperCase() || "?";
+    const score = Math.round(Number(entry.score) || 0);
+    const rankClass = index === 0 ? "top-1" : index === 1 ? "top-2" : index === 2 ? "top-3" : "";
+    return `
+      <li class="ranking-row ${rankClass} ${index < 3 ? "top" : ""}">
+        <span class="ranking-rank">${index + 1}</span>
+        <span class="ranking-avatar" aria-hidden="true">${avatar}</span>
+        <span class="ranking-name">${entry.nickname || "익명"}</span>
+        <span class="ranking-score">${score}</span>
+      </li>
+    `;
+  }).join("");
+
+  if (panel) panel.dataset.mode = mode;
+}
+
+function setupRankingToggle() {
+  const button = document.getElementById("result-ranking");
+  const panel = document.getElementById("ranking-panel");
+  if (!button || !panel) return;
+
+  button.addEventListener("click", async () => {
+    const isOpen = panel.classList.toggle("open");
+    panel.classList.toggle("collapsed", !isOpen);
+    panel.setAttribute("aria-hidden", String(!isOpen));
+    button.setAttribute("aria-expanded", String(isOpen));
+    button.classList.toggle("active", isOpen);
+
+    if (isOpen) {
+      await renderLeaderboard(state.mode || "reaction");
+      panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  });
+}
+
+setupRankingToggle();
+
+async function showResult() {
   showScreen("screen-result");
 
   // 등급은 명확한 ms 구간표로 정한다 (scoring.js 참고) — 입장/저장 중
@@ -381,6 +443,19 @@ function showResult() {
   badgeEl.style.animation = "none";
   void badgeEl.offsetWidth;
   badgeEl.style.animation = "";
+
+  const gradeImageMap = {
+    S: "./assets/grade-a.jpg",
+    A: "./assets/grade-a.jpg",
+    B: "./assets/grade-b.jpg",
+    C: "./assets/grade-c.jpg",
+    D: "./assets/grade-d.jpg",
+  };
+
+  const gradeImageEl = document.getElementById("result-grade-image");
+  const gradeImageSrc = gradeImageMap[grade.rank] ?? gradeImageMap.D;
+  gradeImageEl.src = gradeImageSrc;
+  gradeImageEl.alt = `${grade.name} 결과 이미지`;
 
   document.getElementById("result-rank").textContent = grade.rank;
   document.getElementById("result-emoji").textContent = grade.emoji;
@@ -426,6 +501,13 @@ function showResult() {
 
   const previousBest = loadBestScore(window.localStorage);
   saveBestScore(overallScore, window.localStorage);
+  const leaderboardMode = state.mode === "mash" ? "mash" : "reaction";
+  await saveLeaderboardEntryRemote({
+    nickname: state.nickname,
+    studentId: state.studentId,
+    score: overallScore,
+    timestamp: Date.now(),
+  }, window.localStorage, leaderboardMode, window.fetch.bind(window));
   const newBest = loadBestScore(window.localStorage);
   const isNewBest = previousBest !== null && newBest > previousBest;
 
@@ -433,16 +515,14 @@ function showResult() {
 
   const bestEl = document.getElementById("result-best");
   bestEl.textContent = `개인 최고 기록: ${Math.round(newBest)}점`;
+  await renderLeaderboard(leaderboardMode);
 
   const canvas = document.getElementById("result-canvas");
   drawResultCard(canvas, { grade, overallScore });
 
-  document.getElementById("result-download").onclick = () => {
-    const link = document.createElement("a");
-    link.download = "sogang-course-registration-result.png";
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-  };
+  const sharePreviewUrl = new URL("./assets/result-preview.png", window.location.href).href;
+  document.querySelector('meta[property="og:image"]').setAttribute("content", sharePreviewUrl);
+  document.querySelector('meta[name="twitter:image"]').setAttribute("content", sharePreviewUrl);
 
   const shareBtn = document.getElementById("result-share");
   const shareHintEl = document.getElementById("share-hint");

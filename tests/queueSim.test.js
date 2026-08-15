@@ -30,3 +30,13 @@ test("entryScore is clamped to 0-100 range", () => {
   assert.equal(overMax[overMax.length - 1].count, 0);
   assert.equal(underMin[underMin.length - 1].count, 0);
 });
+
+test("higher score produces a distinctly smaller queue range and shorter total wait", () => {
+  const fast = buildQueueSteps(95, () => 0.75);
+  const slow = buildQueueSteps(15, () => 0.25);
+  const totalDelay = (steps) => steps.reduce((sum, s) => sum + s.delayMs, 0);
+
+  assert.ok(fast[0].count < slow[0].count);
+  assert.ok(totalDelay(fast) < totalDelay(slow));
+  assert.ok(fast.length > 0 && slow.length > 0);
+});

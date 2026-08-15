@@ -4,7 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>서강대 수강신청 클릭 연습</title>
+  <meta name="description" content="서강대 수강신청을 연습하고, 성적표처럼 결과를 공유해보세요." />
   <meta name="color-scheme" content="light dark" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="서강대 수강신청 클릭 연습" />
+  <meta property="og:description" content="서강대 수강신청을 연습하고, 성적표처럼 결과를 공유해보세요." />
+  <meta property="og:image" content="./assets/result-preview.png" />
+  <meta property="og:image:alt" content="서강대 수강신청 결과 성적표 미리보기" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="서강대 수강신청 클릭 연습" />
+  <meta name="twitter:description" content="서강대 수강신청을 연습하고, 성적표처럼 결과를 공유해보세요." />
+  <meta name="twitter:image" content="./assets/result-preview.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Noto+Serif+KR:wght@500;700&display=swap" rel="stylesheet" />
@@ -58,23 +71,23 @@
 
       <div class="login-hero-ads">
         <p class="ads-column-title">🎉 지금은 광고 자리 전부 무료!</p>
-        <a class="ad-banner" href="mailto:jiub91095@gmail.com">
+        <a class="ad-banner" href="https://open.kakao.com/o/slR2H2Ii" target="_blank" rel="noopener noreferrer">
           <span class="ad-banner-badge">100% 무료</span>
           <span class="ad-banner-title">🎪 동아리 무료 홍보</span>
           <span class="ad-banner-desc">우리 동아리 배너, 여기에 무료로 실어드려요</span>
-          <span class="ad-banner-contact">jiub91095@gmail.com</span>
+          <span class="ad-banner-contact">카카오톡 오픈채팅</span>
         </a>
-        <a class="ad-banner" href="mailto:jiub91095@gmail.com">
+        <a class="ad-banner" href="https://open.kakao.com/o/slR2H2Ii" target="_blank" rel="noopener noreferrer">
           <span class="ad-banner-badge">100% 무료</span>
           <span class="ad-banner-title">📢 여기에 배너 광고</span>
           <span class="ad-banner-desc">수강신청 시즌 트래픽, 무료로 노출해보세요</span>
-          <span class="ad-banner-contact">jiub91095@gmail.com</span>
+          <span class="ad-banner-contact">카카오톡 오픈채팅</span>
         </a>
-        <a class="ad-banner" href="mailto:jiub91095@gmail.com">
+        <a class="ad-banner" href="https://open.kakao.com/o/slR2H2Ii" target="_blank" rel="noopener noreferrer">
           <span class="ad-banner-badge">100% 무료</span>
           <span class="ad-banner-title">📢 여기에 배너 광고</span>
           <span class="ad-banner-desc">행사·모집 공고도 무료로 홍보해드려요</span>
-          <span class="ad-banner-contact">jiub91095@gmail.com</span>
+          <span class="ad-banner-contact">카카오톡 오픈채팅</span>
         </a>
       </div>
     </section>
@@ -165,15 +178,30 @@
     </section>
 
     <section id="screen-result" class="screen screen-full-bleed">
+      <div class="result-inquiry-strip" aria-label="배너 문의">
+        <a class="result-inquiry-banner" href="https://open.kakao.com/o/slR2H2Ii" target="_blank" rel="noopener noreferrer">
+          <span class="result-inquiry-label">배너 문의</span>
+          <span class="result-inquiry-text">수강신청 게임 사이트</span>
+        </a>
+        <a class="result-inquiry-banner" href="https://open.kakao.com/o/slR2H2Ii" target="_blank" rel="noopener noreferrer">
+          <span class="result-inquiry-label">배너 문의</span>
+          <span class="result-inquiry-text">카카오톡 오픈채팅</span>
+        </a>
+      </div>
+
       <div class="panel-card result-card">
         <p id="result-newbest" class="result-newbest"></p>
 
-        <div id="result-badge" class="result-badge">
-          <span id="result-rank" class="result-rank"></span>
+        <div class="result-header">
+          <div id="result-badge" class="result-badge">
+            <span id="result-rank" class="result-rank"></span>
+          </div>
+          <div class="result-title-wrap">
+            <h2 id="result-grade" class="result-grade-title"></h2>
+            <img id="result-grade-image" class="result-grade-image" alt="결과 이미지" aria-live="polite" />
+          </div>
         </div>
         <p id="result-emoji" class="result-emoji"></p>
-
-        <h2 id="result-grade"></h2>
         <p id="result-desc"></p>
         <p id="result-student-info" class="result-student-info"></p>
 
@@ -207,13 +235,19 @@
 
         <p id="result-best"></p>
 
+        <div id="ranking-panel" class="ranking-panel collapsed" aria-hidden="true">
+          <h3 id="ranking-title" class="ranking-title">반응 속도 랭킹</h3>
+          <p id="ranking-subtitle" class="ranking-subtitle">REACTION MODE</p>
+          <ol id="ranking-list" class="ranking-list"></ol>
+        </div>
+
         <details class="result-preview">
           <summary>결과 카드 이미지 미리보기</summary>
           <canvas id="result-canvas" width="600" height="800"></canvas>
         </details>
 
         <div class="result-actions">
-          <button id="result-download">이미지 저장</button>
+          <button id="result-ranking">랭킹</button>
           <button id="result-share">공유하기</button>
           <button id="result-replay">다시 하기</button>
         </div>

@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "npx --yes vercel dev",
+    "start": "npx --yes vercel dev",
     "test": "node --test tests/*.test.js"
   }
 }
