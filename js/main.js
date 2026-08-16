@@ -1,3 +1,4 @@
+import { inject } from "@vercel/analytics";
 import {
   normalizeReactionMs,
   combineScores,
@@ -14,6 +15,9 @@ import {
 } from "./storage.js";
 import { drawResultCard } from "./resultCard.js";
 import { computeOpenAt, isOpen, formatClock, formatRemaining } from "./roundClock.js";
+
+// Initialize Vercel Web Analytics
+inject();
 
 const ENTRY_LOADING_DELAY_MS = 600;
 const LOADING_DELAY_MS = 900;
