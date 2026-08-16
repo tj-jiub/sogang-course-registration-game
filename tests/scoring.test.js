@@ -31,6 +31,13 @@ test("normalizeReactionMs: faster reaction (lower ms) scores higher", () => {
   assert.equal(Math.round(normalizeReactionMs(260)), 28);
 });
 
+test("normalizeReactionMs: 40-90ms opens a 100-120 bonus zone above the old cap", () => {
+  assert.equal(normalizeReactionMs(40), 120);
+  assert.equal(normalizeReactionMs(10), 120); // clamps, doesn't run away past 120
+  assert.equal(normalizeReactionMs(65), 110); // exact midpoint of the linear bonus range
+  assert.ok(normalizeReactionMs(65) > normalizeReactionMs(90));
+});
+
 test("combineScores averages entry and save scores", () => {
   assert.equal(combineScores(100, 0), 50);
   assert.equal(combineScores(80, 60), 70);
