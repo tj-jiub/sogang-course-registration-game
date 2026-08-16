@@ -16,7 +16,7 @@ function sendJson(res, statusCode, data) {
   res.statusCode = statusCode;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Accept");
   res.end(JSON.stringify(data));
 }
@@ -31,6 +31,20 @@ export default async function handler(req, res) {
 
   if (req.method === "GET") {
     const mode = getMode(url.searchParams.get("mode"));
+    sendJson(res, 200, state[mode]);
+    return;
+  }
+
+  // 테스트/오염 데이터를 실제 유저 기록은 건드리지 않고 정확히 골라
+  // 지우기 위한 관리용 엔드포인트. 닉네임 정확히 일치하는 항목만 제거.
+  if (req.method === "DELETE") {
+    const mode = getMode(url.searchParams.get("mode"));
+    const nickname = url.searchParams.get("nickname");
+    if (!nickname) {
+      sendJson(res, 400, { error: "nickname query param required" });
+      return;
+    }
+    state[mode] = state[mode].filter((e) => e.nickname !== nickname);
     sendJson(res, 200, state[mode]);
     return;
   }
