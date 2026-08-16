@@ -31,7 +31,7 @@ function getMode(mode) {
 let tableReady = null;
 function ensureTable() {
   // 콜드스타트마다 한 번만 실행되도록 프로미스를 캐싱한다 — 요청마다
-  // DDL을 다시 보내지 않는다.
+  // DDL/마이그레이션을 다시 보내지 않는다.
   if (!tableReady) {
     tableReady = (async () => {
       await sql`
@@ -47,6 +47,29 @@ function ensureTable() {
       await sql`
         CREATE INDEX IF NOT EXISTS leaderboard_mode_score_idx
         ON leaderboard (mode, score DESC, ts ASC)
+      `;
+
+      // 원래는 플레이할 때마다 새 행을 쌓기만 해서, 같은 사람이 여러 번
+      // 하면 자기 이전 기록들과 나란히 top-10을 여러 칸 차지해버렸다
+      // (실제로 한 유저가 3판 해서 10칸 중 3칸을 혼자 차지한 걸 확인함).
+      // (mode, nickname, student_id) 당 한 행만 남기는 게 목표라, 기존
+      // 데이터는 최고점만 남기고 중복 행만 지운다(=아무도 자기 최고
+      // 기록을 잃지 않는다) — 그 다음 유니크 제약을 걸어서 이후 저장은
+      // upsert로 처리한다.
+      await sql`
+        DELETE FROM leaderboard a USING leaderboard b
+        WHERE a.mode = b.mode
+          AND a.nickname = b.nickname
+          AND a.student_id = b.student_id
+          AND (a.score < b.score OR (a.score = b.score AND a.id < b.id))
+      `;
+      await sql`
+        DO $$
+        BEGIN
+          ALTER TABLE leaderboard
+            ADD CONSTRAINT leaderboard_unique_player UNIQUE (mode, nickname, student_id);
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END $$;
       `;
     })();
   }
@@ -155,10 +178,16 @@ async function handleRequest(req, res) {
   }
   const entry = normalizeLeaderboardItems([rawEntry])[0];
 
+  // 같은 (mode, nickname, studentId)로 또 저장하면 새 점수가 기존 최고
+  // 기록보다 높을 때만 덮어쓴다 — 낮은 점수로 다시 하면 이전 최고 기록이
+  // 유지된다("마지막 점수로 바뀌는" 문제 수정).
   await ensureTable();
   await sql`
     INSERT INTO leaderboard (mode, nickname, student_id, score, ts)
     VALUES (${mode}, ${entry.nickname}, ${entry.studentId}, ${entry.score}, ${entry.timestamp})
+    ON CONFLICT (mode, nickname, student_id)
+    DO UPDATE SET score = EXCLUDED.score, ts = EXCLUDED.ts
+    WHERE EXCLUDED.score > leaderboard.score
   `;
   sendJson(res, 200, await loadMode(mode));
 }
