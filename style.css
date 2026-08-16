@@ -1128,7 +1128,12 @@ h1, h2 {
 }
 
 .ranking-panel.open {
-  max-height: 560px;
+  /* 랭킹은 서버에서 최대 10개까지 오는데, 헤더(타이틀+서브타이틀)만 해도
+     뷰포트에 따라 100px+ 먹어서 10행 + 헤더가 560px 안에 다 안 들어갔다
+     — overflow:hidden(위 기본 규칙)이라 6등 아래는 잘려서 안 보이고
+     스크롤도 안 됐다. 넉넉한 max-height + 세로 스크롤로 바꾼다. */
+  max-height: 900px;
+  overflow-y: auto;
   opacity: 1;
   padding-top: 20px;
   padding-bottom: 10px;
