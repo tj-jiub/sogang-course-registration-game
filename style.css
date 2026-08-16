@@ -312,7 +312,7 @@ h1, h2 {
 }
 
 .login-hero-ads {
-  flex: 0 0 300px;
+  flex: 0 0 340px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -386,6 +386,32 @@ h1, h2 {
   margin-top: 4px;
 }
 
+/* 실제로 집행 중인 광고("배너 모집 중" 문구가 붙은 빈 자리들과는 다름) —
+   사진이 있어야 한눈에 광고 모집 placeholder랑 구분된다. 이미지를 카드
+   패딩 바깥(위쪽 모서리까지 꽉 차게) 두고, 텍스트만 따로 패딩을 줘서
+   다른 배너들과 톤은 맞추되 뱃지 없이 사진으로 차별화한다. */
+.ad-banner--promo {
+  padding: 0;
+  gap: 0;
+}
+
+.ad-banner-image {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  object-position: 50% 32%;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  display: block;
+}
+
+.ad-banner-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 16px 16px;
+}
+
 @media (max-width: 860px) {
   .screen.screen-login-hero {
     flex-direction: column;
@@ -410,6 +436,14 @@ h1, h2 {
   .ad-banner {
     flex: 0 0 220px;
     min-height: 150px;
+  }
+
+  .ad-banner--promo {
+    flex: 0 0 240px;
+  }
+
+  .ad-banner-image {
+    height: 100px;
   }
 }
 
