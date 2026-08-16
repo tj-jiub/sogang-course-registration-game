@@ -63,12 +63,17 @@ function ensureTable() {
           AND a.student_id = b.student_id
           AND (a.score < b.score OR (a.score = b.score AND a.id < b.id))
       `;
+      // ADD CONSTRAINT ... UNIQUE는 내부적으로 같은 이름의 인덱스를 만드는데,
+      // 그 인덱스가 이미 있으면(=이 마이그레이션이 이전 콜드스타트에서 이미
+      // 성공한 경우) duplicate_object가 아니라 duplicate_table(42P07,
+      // "relation already exists")로 예외가 난다 — 배포 직후 첫 콜드스타트만
+      // 통과하고 그 다음부터는 매번 여기서 500이 나는 버그가 있었다.
       await sql`
         DO $$
         BEGIN
           ALTER TABLE leaderboard
             ADD CONSTRAINT leaderboard_unique_player UNIQUE (mode, nickname, student_id);
-        EXCEPTION WHEN duplicate_object THEN NULL;
+        EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL;
         END $$;
       `;
     })();
