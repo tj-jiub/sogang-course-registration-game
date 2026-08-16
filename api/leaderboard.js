@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import postgres from "postgres";
 import { normalizeLeaderboardItems } from "../js/storage.js";
 
 // globalThis 인메모리 버전은 서버리스 인스턴스가 재배포/재시작될 때마다
@@ -6,13 +6,18 @@ import { normalizeLeaderboardItems } from "../js/storage.js";
 // 겪은 뒤 Supabase Postgres(POSTGRES_URL, Vercel-Supabase 연동으로 자동
 // 주입됨)로 옮겼다.
 //
-// Pool을 모듈 스코프에 하나만 두고 warm 인스턴스 사이에서 재사용한다.
-// max:1로 잡는 이유는 서버리스 인스턴스 하나가 한 번에 하나씩만 처리하는
-// 구조라 인스턴스 수만큼 커넥션이 늘어나는데, Supabase 무료 티어 커넥션
-// 한도를 인스턴스 개수가 쉽게 넘어설 수 있어서다.
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
-  ssl: { rejectUnauthorized: false },
+// pg 패키지로 먼저 시도했다가 FUNCTION_INVOCATION_FAILED(모듈 로드
+// 단계에서 죽는 걸로 추정 — pg가 네이티브/클라우드플레어 바인딩을
+// 동적 require하는 부분이 Vercel의 서버리스 함수 번들러와 잘 안 맞는
+// 것으로 보임)로 막혀서, 번들러 친화적인 postgres(porsager) 패키지로
+// 바꿨다.
+//
+// sql 인스턴스를 모듈 스코프에 하나만 두고 warm 인스턴스 사이에서
+// 재사용한다. max:1인 이유는 서버리스 인스턴스 하나가 한 번에 하나씩만
+// 처리하는 구조라 인스턴스 수만큼 커넥션이 늘어나는데, Supabase 무료
+// 티어 커넥션 한도를 인스턴스 개수가 쉽게 넘어설 수 있어서다.
+const sql = postgres(process.env.POSTGRES_URL, {
+  ssl: "require",
   max: 1,
 });
 
@@ -28,33 +33,35 @@ function ensureTable() {
   // 콜드스타트마다 한 번만 실행되도록 프로미스를 캐싱한다 — 요청마다
   // DDL을 다시 보내지 않는다.
   if (!tableReady) {
-    tableReady = pool.query(`
-      CREATE TABLE IF NOT EXISTS leaderboard (
-        id SERIAL PRIMARY KEY,
-        mode TEXT NOT NULL,
-        nickname TEXT NOT NULL,
-        student_id TEXT NOT NULL,
-        score DOUBLE PRECISION NOT NULL,
-        ts BIGINT NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS leaderboard_mode_score_idx
-        ON leaderboard (mode, score DESC, ts ASC);
-    `);
+    tableReady = (async () => {
+      await sql`
+        CREATE TABLE IF NOT EXISTS leaderboard (
+          id SERIAL PRIMARY KEY,
+          mode TEXT NOT NULL,
+          nickname TEXT NOT NULL,
+          student_id TEXT NOT NULL,
+          score DOUBLE PRECISION NOT NULL,
+          ts BIGINT NOT NULL
+        )
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS leaderboard_mode_score_idx
+        ON leaderboard (mode, score DESC, ts ASC)
+      `;
+    })();
   }
   return tableReady;
 }
 
 async function loadMode(mode) {
   await ensureTable();
-  const { rows } = await pool.query(
-    `SELECT nickname, student_id AS "studentId", score, ts AS "timestamp"
-     FROM leaderboard
-     WHERE mode = $1
-     ORDER BY score DESC, ts ASC
-     LIMIT 10`,
-    [mode]
-  );
-  return rows;
+  return sql`
+    SELECT nickname, student_id AS "studentId", score, ts AS "timestamp"
+    FROM leaderboard
+    WHERE mode = ${mode}
+    ORDER BY score DESC, ts ASC
+    LIMIT 10
+  `;
 }
 
 function sendJson(res, statusCode, data) {
@@ -67,6 +74,14 @@ function sendJson(res, statusCode, data) {
 }
 
 export default async function handler(req, res) {
+  try {
+    await handleRequest(req, res);
+  } catch (error) {
+    sendJson(res, 500, { error: String(error?.stack || error) });
+  }
+}
+
+async function handleRequest(req, res) {
   if (req.method === "OPTIONS") {
     sendJson(res, 204, null);
     return;
@@ -91,7 +106,7 @@ export default async function handler(req, res) {
       return;
     }
     await ensureTable();
-    await pool.query(`DELETE FROM leaderboard WHERE mode = $1 AND nickname = $2`, [mode, nickname]);
+    await sql`DELETE FROM leaderboard WHERE mode = ${mode} AND nickname = ${nickname}`;
     sendJson(res, 200, await loadMode(mode));
     return;
   }
@@ -141,9 +156,9 @@ export default async function handler(req, res) {
   const entry = normalizeLeaderboardItems([rawEntry])[0];
 
   await ensureTable();
-  await pool.query(
-    `INSERT INTO leaderboard (mode, nickname, student_id, score, ts) VALUES ($1, $2, $3, $4, $5)`,
-    [mode, entry.nickname, entry.studentId, entry.score, entry.timestamp]
-  );
+  await sql`
+    INSERT INTO leaderboard (mode, nickname, student_id, score, ts)
+    VALUES (${mode}, ${entry.nickname}, ${entry.studentId}, ${entry.score}, ${entry.timestamp})
+  `;
   sendJson(res, 200, await loadMode(mode));
 }

@@ -10,6 +10,6 @@
   },
   "dependencies": {
     "@vercel/og": "^1.0.1",
-    "pg": "^8.23.0"
+    "postgres": "^3.4.9"
   }
 }
