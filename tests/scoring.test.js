@@ -20,12 +20,15 @@ test("normalizeCps clamps to 0-100 and applies a superlinear curve up to 18 cps"
 });
 
 test("normalizeReactionMs: faster reaction (lower ms) scores higher", () => {
-  assert.equal(normalizeReactionMs(120), 100);
+  assert.equal(normalizeReactionMs(90), 100);
   assert.equal(normalizeReactionMs(400), 0);
   assert.equal(normalizeReactionMs(2000), 0);
   assert.ok(normalizeReactionMs(200) > normalizeReactionMs(400));
-  // ratio 0.5 with exponent 1.4 -> below the naive 50.
-  assert.equal(Math.round(normalizeReactionMs(260)), 38);
+  // 120ms used to be the perfect-score threshold; now it's a strong but
+  // not-quite-max reaction, which is the point of the tightened curve.
+  assert.ok(normalizeReactionMs(120) < 100);
+  // ratio ~0.452 with exponent 1.6 -> well below the naive 45.
+  assert.equal(Math.round(normalizeReactionMs(260)), 28);
 });
 
 test("combineScores averages entry and save scores", () => {

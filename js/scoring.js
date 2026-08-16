@@ -1,8 +1,12 @@
 const CPS_MAX = 18; // 3초간 54클릭 이상이어야 만점 — 일반적인 수동 클릭으로는 거의 불가능
 const CPS_EXPONENT = 1.6; // >1이면 중간 수준 CPS는 상대적으로 낮은 점수를 받는다
-const REACTION_BEST_MS = 120; // 이보다 빠르면 만점 (사람 반응속도 한계권)
+// 대기 화면 카운트다운이 항상 정확히 10초 고정이라 리듬을 외워서 클릭하는
+// 식으로 120ms 만점을 너무 쉽게 찍는 사람이 많았다(리더보드에 100점이
+// 열 명 넘게 쌓임) — 만점 기준을 더 빡빡하게 당겨서 진짜 빠른 반응만
+// 100점을 받도록 조정.
+const REACTION_BEST_MS = 90; // 이보다 빠르면 만점
 const REACTION_WORST_MS = 400; // 이보다 느리면 0점
-const REACTION_EXPONENT = 1.4;
+const REACTION_EXPONENT = 1.6;
 
 // 진행 바 표시용 0-100 정규화 점수 (등급 판정에는 쓰지 않는다 — 아래 참고).
 export function normalizeCps(cps) {
