@@ -75,8 +75,19 @@ initThemeToggle();
 // 클릭이 들어온 순간 openAt과 직접 비교해서 판정한다(roundClock.isOpen).
 // 화면 갱신용 requestAnimationFrame 루프는 순수하게 "보여주기"만 담당—
 // 이 루프가 언제 도는지는 판정 결과에 전혀 영향을 주지 않는다.
-const SIM_START_SECONDS = 10 * 3600 + 29 * 60 + 50;
-const SIM_OPEN_SECONDS = 10 * 3600 + 30 * 60 + 0;
+const SIM_OPEN_SECONDS = 10 * 3600 + 30 * 60 + 0; // 정각 자체는 항상 10:30:00
+
+// 대기시간이 항상 정확히 10초로 고정이었어서, 화면을 보지도 않고 "열까지
+// 세고 클릭"하는 식으로 반응속도 없이 만점을 찍는 사람이 많았다(리더보드
+// 상위권이 100점으로 도배됨). 매 라운드 대기시간을 3~10초 사이로
+// 무작위화해서 실제로 카운트다운/OPEN 전환을 보고 반응해야만 하게 한다 —
+// "정각 10:30:00"이라는 표시는 그대로 유지하고, 거기까지 걸리는 시간만
+// 매번 달라진다.
+function randomStandbyStartSeconds() {
+  const waitSeconds = 3 + Math.random() * 7; // 3~10초
+  return SIM_OPEN_SECONDS - waitSeconds;
+}
+
 let standbyClockFrame = null;
 
 const state = {
@@ -158,7 +169,8 @@ function startStandbyClock() {
   const bannerEl = document.getElementById("standby-message");
 
   const roundStartMs = performance.now();
-  const openAt = computeOpenAt(roundStartMs, SIM_START_SECONDS, SIM_OPEN_SECONDS);
+  const simStartSeconds = randomStandbyStartSeconds();
+  const openAt = computeOpenAt(roundStartMs, simStartSeconds, SIM_OPEN_SECONDS);
 
   // 정각이 지나도 루프를 멈추지 않는다 — "서버 시간"은 계속 흘러야 자연
   // 스럽다. 예전엔 정각 순간 루프를 끊어서 시계가 "OPEN"에서 멈춘 것처럼
@@ -166,7 +178,7 @@ function startStandbyClock() {
   // 느껴졌다. 다른 화면으로 넘어갈 때는 stopStandbyClock()으로 정리한다.
   const render = () => {
     const now = performance.now();
-    const simSeconds = SIM_START_SECONDS + (now - roundStartMs) / 1000;
+    const simSeconds = simStartSeconds + (now - roundStartMs) / 1000;
     standbyClockEl.textContent = formatClock(simSeconds);
 
     if (!isOpen(now, openAt)) {
@@ -194,7 +206,7 @@ function stopStandbyClock() {
   }
 }
 
-document.getElementById("server-clock").textContent = formatClock(SIM_START_SECONDS);
+document.getElementById("server-clock").textContent = formatClock(randomStandbyStartSeconds());
 
 document.getElementById("login-form").addEventListener("submit", (event) => {
   event.preventDefault();
