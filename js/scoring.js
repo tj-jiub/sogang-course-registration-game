@@ -1,16 +1,14 @@
 const CPS_MAX = 18; // 3초간 54클릭 이상이어야 만점 — 일반적인 수동 클릭으로는 거의 불가능
 const CPS_EXPONENT = 1.6; // >1이면 중간 수준 CPS는 상대적으로 낮은 점수를 받는다
-// 대기 화면 카운트다운이 항상 정확히 10초 고정이라 리듬을 외워서 클릭하는
-// 식으로 만점을 너무 쉽게 찍는 사람이 많았다(리더보드 10칸이 전부 100점).
 // 100점을 상한으로 막아두면 예전에 100 찍은 기록들과 계속 동점으로
-// 묶여버려서, 90ms 밑으로는 100을 상한으로 끊지 않고 40ms까지 120점
-// 보너스 구간을 선형으로 열어둔다 — 예전 100점 기록도 새 만점자가 실제로
-// 앞지를 수 있게.
+// 묶여버려서, 90ms 밑으로는 100을 상한으로 끊지 않고 40ms까지 보너스
+// 구간을 선형으로 열어둔다 — 예전 100점 기록도 새 만점자가 실제로
+// 앞지를 수 있게. 보너스 상한을 120→140으로 한 번 더 올림.
 const REACTION_BEST_MS = 90; // 이 구간(BEST~ELITE)까진 100점
-const REACTION_ELITE_MS = 40; // 이보다 빠르면 보너스 상한(120점)
+const REACTION_ELITE_MS = 40; // 이보다 빠르면 보너스 상한(140점)
 const REACTION_WORST_MS = 400; // 이보다 느리면 0점
 const REACTION_EXPONENT = 1.6;
-const REACTION_BONUS_MAX = 120;
+const REACTION_BONUS_MAX = 140;
 
 // 진행 바 표시용 0-100 정규화 점수 (등급 판정에는 쓰지 않는다 — 아래 참고).
 export function normalizeCps(cps) {
@@ -23,7 +21,7 @@ export function normalizeReactionMs(ms) {
   if (ms <= REACTION_ELITE_MS) return REACTION_BONUS_MAX;
 
   if (ms < REACTION_BEST_MS) {
-    // 90ms(100점) ~ 40ms(120점) 구간은 선형 보너스.
+    // 90ms(100점) ~ 40ms(140점) 구간은 선형 보너스.
     const bonusRatio = (REACTION_BEST_MS - ms) / (REACTION_BEST_MS - REACTION_ELITE_MS);
     return 100 + bonusRatio * (REACTION_BONUS_MAX - 100);
   }

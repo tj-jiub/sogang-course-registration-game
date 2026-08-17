@@ -71,10 +71,10 @@ async function renderResultImage(request) {
   const rankParam = (searchParams.get("rank") || "B").toUpperCase();
   const rank = RANKS.has(rankParam) ? rankParam : "B";
   const nickname = (searchParams.get("nickname") || "익명").slice(0, 12) || "익명";
-  // scoring.js의 반응속도 보너스 구간 덕에 120점까지 나올 수 있다 — 여기서
-  // 100으로 잘라버리면 정작 만점을 넘긴 사람의 공유 카드에 실제보다 낮은
+  // scoring.js의 반응속도 보너스 구간 덕에 140점까지 나올 수 있다 — 여기서
+  // 더 낮게 잘라버리면 정작 만점을 넘긴 사람의 공유 카드에 실제보다 낮은
   // 점수가 찍힌다.
-  const score = Math.max(0, Math.min(120, Math.round(Number(searchParams.get("score")) || 0)));
+  const score = Math.max(0, Math.min(140, Math.round(Number(searchParams.get("score")) || 0)));
   const entryMs = Math.max(0, Math.round(Number(searchParams.get("entryMs")) || 0));
   const saveMs = Math.max(0, Math.round(Number(searchParams.get("saveMs")) || 0));
 
