@@ -365,8 +365,25 @@ async function startTossPhase() {
   showResult();
 }
 
+// 1~3등 포디엄 카드 하나를 만든다. entries/점수 자체는 renderLeaderboard가
+// 이미 받아온 것을 그대로 넘겨받아 표시만 할 뿐, 정렬/필터링에는 관여하지
+// 않는다 — 랭킹 데이터는 여기서 전혀 바뀌지 않는다.
+function podiumCard(entry, rank) {
+  const avatar = entry.nickname?.charAt(0)?.toUpperCase() || "?";
+  const score = Math.round(Number(entry.score) || 0);
+  return `
+    <div class="podium-card podium-card--${rank}">
+      <span class="podium-crown">${rank === 1 ? "👑" : rank === 2 ? "🥈" : "🥉"}</span>
+      <span class="podium-avatar" aria-hidden="true">${avatar}</span>
+      <span class="podium-name">${entry.nickname || "익명"}</span>
+      <span class="podium-score">${score}</span>
+    </div>
+  `;
+}
+
 async function renderLeaderboard(mode = state.mode || "reaction") {
   const listEl = document.getElementById("ranking-list");
+  const podiumEl = document.getElementById("ranking-podium");
   const entries = await loadLeaderboardEntries(mode, window.localStorage, window.fetch.bind(window));
   const panel = document.getElementById("ranking-panel");
   const titleEl = document.getElementById("ranking-title");
@@ -377,18 +394,32 @@ async function renderLeaderboard(mode = state.mode || "reaction") {
   if (subtitleEl) subtitleEl.textContent = mode === "mash" ? "MASH MODE" : "REACTION MODE";
 
   if (!entries.length) {
+    if (podiumEl) podiumEl.innerHTML = "";
     listEl.innerHTML = '<li class="ranking-empty">아직 기록이 없습니다.</li>';
     if (panel) panel.dataset.mode = mode;
     return;
   }
 
-  listEl.innerHTML = entries.slice(0, 10).map((entry, index) => {
+  // 1~3등은 포디엄 카드로, 4등부터는 기존 리스트 그대로 — entries 배열
+  // 자체(순서/값)는 그대로 두고 어느 템플릿으로 그릴지만 나눈다.
+  const top3 = entries.slice(0, 3);
+  const rest = entries.slice(3, 10);
+
+  if (podiumEl) {
+    // 시각적으로 2등-1등-3등 순서(가운데가 1등)로 배치 — DOM 순서 자체를
+    // 그렇게 쓰고 CSS에서는 순서를 건드리지 않는다.
+    const podiumOrder = [top3[1], top3[0], top3[2]];
+    podiumEl.innerHTML = podiumOrder
+      .map((entry, i) => (entry ? podiumCard(entry, i === 0 ? 2 : i === 1 ? 1 : 3) : ""))
+      .join("");
+  }
+
+  listEl.innerHTML = rest.map((entry, index) => {
     const avatar = entry.nickname?.charAt(0)?.toUpperCase() || "?";
     const score = Math.round(Number(entry.score) || 0);
-    const rankClass = index === 0 ? "top-1" : index === 1 ? "top-2" : index === 2 ? "top-3" : "";
     return `
-      <li class="ranking-row ${rankClass} ${index < 3 ? "top" : ""}">
-        <span class="ranking-rank">${index + 1}</span>
+      <li class="ranking-row">
+        <span class="ranking-rank">${index + 4}</span>
         <span class="ranking-avatar" aria-hidden="true">${avatar}</span>
         <span class="ranking-name">${entry.nickname || "익명"}</span>
         <span class="ranking-score">${score}</span>
